@@ -337,10 +337,17 @@ tbody td{padding:8px 12px;white-space:nowrap}
     <button class="chip a-teal" data-pp="all" onclick="setPP('all')">All</button>
     <button class="chip" data-pp="FullyPaid" onclick="setPP('FullyPaid')">Paid</button>
     <button class="chip" data-pp="Deposit" onclick="setPP('Deposit')">Deposit</button>
+    <div class="sep"></div>
+    <span class="tlabel">Source</span>
+    <button class="chip a-teal" data-os="all" onclick="setOS('all')">All</button>
+    <button class="chip" data-os="PTMY" onclick="setOS('PTMY')">PTMY</button>
+    <button class="chip" data-os="FS2" onclick="setOS('FS2')">FS2</button>
+    <button class="chip" data-os="Dealer" onclick="setOS('Dealer')">Dealer</button>
+    <button class="chip" data-os="PTSG" onclick="setOS('PTSG')">PTSG 🇸🇬</button>
   </div>
   <div class="tcard">
     <div class="thead-bar"><span class="thead-title">Orders</span><span class="thead-count" id="o-count">—</span></div>
-    <div class="twrap"><table><thead><tr><th>Date</th><th>Client</th><th>Frame</th><th>Total</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
+    <div class="twrap"><table><thead><tr><th>Date</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody><tfoot id="o-tfoot"></tfoot></table></div>
   </div>
 </div>
 </div>
@@ -349,7 +356,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
 
 <script>
 const CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vQlC6n9OmpmwrL24PYzSOPbrEcaupf9pNJzCcpdARonmMbJlf0KZuvQk8jnnLlmkn1pi-tvCaZVAYM_/pub?gid=1579074762&single=true&output=csv';
-let ALL=[], CH={}, srcF='all', pp='all', dayMetric='revenue';
+let ALL=[], CH={}, srcF='all', pp='all', os='all', dayMetric='revenue';
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const DAYS_S=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -404,10 +411,19 @@ function process(rows){
     const pay=(r['Payment Method']||'').trim();
     const sp=(r['Served By']||r['Salesperson']||'').trim();
     const dateStr=r['Date']||rawDate||'';
+    const src=(r['Source']||'').trim();
+    // SGD conversion: PTSG orders or $ prefix = SGD, convert to MYR
+    const SGD_RATE=3.45; // update this rate as needed
+    const rawTotal=(r['Total need receive']||r['Total']||'').trim();
+    const rawDep=(r['Deposited amount']||r['Deposited Amount']||'').trim();
+    const isSGD=src==='PTSG'||rawTotal.startsWith('$');
+    let totalAmt=parseFloat(rawTotal.replace(/[^0-9.]/g,''))||0;
+    let depAmt=parseFloat(rawDep.replace(/[^0-9.]/g,''))||0;
+    if(isSGD){totalAmt=Math.round(totalAmt*SGD_RATE);depAmt=Math.round(depAmt*SGD_RATE);}
     return{date,dateStr,client:(r['Client Name']||'').trim(),
       contact:r['Client Contact']||'',frame:r['Frame']||'',size:r['Size']||'',
-      total,dep,pay,src:(r['Source']||'').trim(),invoice:r['Invoice Number']||'',
-      balance:pay==='Deposit'?Math.max(0,total-dep):0,sp};
+      total:totalAmt,dep:depAmt,pay,src,invoice:r['Invoice Number']||'',
+      balance:pay==='Deposit'?Math.max(0,totalAmt-depAmt):0,sp,isSGD};
   }).filter(o=>o.total>0&&o.date&&o.client&&o.client.length>1
     &&!o.client.toLowerCase().startsWith('test')
     &&!o.client.toLowerCase().startsWith('hxtest'));
@@ -457,6 +473,7 @@ function filterByDropdown(orders, monthId, yearId){
 /* ── Source filter ── */
 function setSrc(s){srcF=s;document.querySelectorAll('[data-src]').forEach(b=>b.classList.toggle('a-blue',b.dataset.src===s));applyFilters()}
 function setPP(p){pp=p;document.querySelectorAll('[data-pp]').forEach(b=>b.classList.toggle('a-teal',b.dataset.pp===p));renderOrders()}
+function setOS(s){os=s;document.querySelectorAll('[data-os]').forEach(b=>b.classList.toggle('a-teal',b.dataset.os===s));renderOrders()}
 function setDayMetric(m){dayMetric=m;document.querySelectorAll('[data-dm]').forEach(b=>b.classList.toggle('a-teal',b.dataset.dm===m));renderDayAnalysis()}
 function applyFilters(){renderOverview()}
 
@@ -874,12 +891,50 @@ function renderOrders(){
   let orders=filterByDropdown(ALL,'ord-month','ord-year');
   if(q)orders=orders.filter(o=>o.client.toLowerCase().includes(q));
   if(pp!=='all')orders=orders.filter(o=>o.pay===pp);
+  if(os!=='all')orders=orders.filter(o=>o.src===os);
   orders.sort((a,b)=>b.date-a.date);
-  document.getElementById('o-count').textContent=`Showing ${Math.min(orders.length,20)} of ${orders.length}`;
-  const sb=s=>{if(s==='PTMY')return`<span class="badge b-ptmy">PTMY</span>`;if(s==='FS2')return`<span class="badge b-fs2">FS2</span>`;if(s==='Dealer')return`<span class="badge b-dealer">Dealer</span>`;return`<span class="badge b-other">${s||'—'}</span>`};
-  document.getElementById('o-tbody').innerHTML=orders.slice(0,20).map(o=>`
-    <tr><td class="td-mono td-dim">${o.dateStr}</td><td class="td-name">${o.client||'—'}</td><td style="color:var(--text2);font-size:11px">${o.frame||'—'}</td><td class="td-amt">${rm(o.total)}</td><td class="td-ok">${o.dep?rm(o.dep):'—'}</td><td class="${o.balance?'td-bal':'td-dim'}">${o.balance?rm(o.balance):'—'}</td><td>${o.pay==='FullyPaid'?'<span class="badge b-paid">Paid</span>':'<span class="badge b-dep">Deposit</span>'}</td><td>${sb(o.src)}</td><td class="td-mono td-dim" style="font-size:10px">${o.invoice||'—'}</td></tr>`).join('')
+  document.getElementById('o-count').textContent=`Showing ${orders.length} orders`;
+
+  const sb=s=>{
+    if(s==='PTMY')return`<span class="badge b-ptmy">PTMY</span>`;
+    if(s==='FS2')return`<span class="badge b-fs2">FS2</span>`;
+    if(s==='Dealer')return`<span class="badge b-dealer">Dealer</span>`;
+    if(s==='PTSG')return`<span class="badge" style="background:rgba(52,199,123,.12);color:var(--green)">PTSG 🇸🇬</span>`;
+    return`<span class="badge b-other">${s||'—'}</span>`;
+  };
+
+  document.getElementById('o-tbody').innerHTML=orders.map(o=>`
+    <tr>
+      <td class="td-mono td-dim">${o.dateStr}</td>
+      <td class="td-name">${o.client||'—'}</td>
+      <td style="color:var(--text2);font-size:11px">${o.frame||'—'}</td>
+      <td class="td-amt">${rm(o.total)}${o.isSGD?'<span style="font-size:9px;color:var(--green);margin-left:4px">SGD→MYR</span>':''}</td>
+      <td class="td-ok">${o.dep?rm(o.dep):'—'}</td>
+      <td class="${o.balance?'td-bal':'td-dim'}">${o.balance?rm(o.balance):'—'}</td>
+      <td>${o.pay==='FullyPaid'?'<span class="badge b-paid">Paid</span>':'<span class="badge b-dep">Deposit</span>'}</td>
+      <td>${sb(o.src)}</td>
+      <td class="td-mono td-dim" style="font-size:10px">${o.invoice||'—'}</td>
+    </tr>`).join('')
     ||'<tr><td colspan="9" class="no-data">No orders found</td></tr>';
+
+  // Summary footer
+  const totalRev=orders.reduce((s,o)=>s+o.total,0);
+  const totalDep=orders.reduce((s,o)=>s+o.dep,0);
+  const totalBal=orders.reduce((s,o)=>s+o.balance,0);
+  const paidCount=orders.filter(o=>o.pay==='FullyPaid').length;
+  const depCount=orders.filter(o=>o.pay==='Deposit').length;
+  document.getElementById('o-tfoot').innerHTML=`
+    <tr style="background:var(--surface2);border-top:2px solid var(--border2)">
+      <td colspan="3" style="padding:10px 12px;font-size:11px;font-weight:600;color:var(--text2)">
+        TOTAL — ${orders.length} orders &nbsp;|&nbsp; 
+        <span style="color:var(--green)">${paidCount} paid</span> &nbsp;|&nbsp; 
+        <span style="color:var(--amber)">${depCount} deposit</span>
+      </td>
+      <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--blue2)">${rm(totalRev)}</td>
+      <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green)">${rm(totalDep)}</td>
+      <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red)">${rm(totalBal)}</td>
+      <td colspan="3"></td>
+    </tr>`;
 }
 
 /* ── LOAD ── */
