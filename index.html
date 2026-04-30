@@ -393,7 +393,9 @@ function process(rows){
       balance:pay==='Deposit'?Math.max(0,total-dep):0,sp};
   }).filter(o=>o.total>0&&o.date&&o.client&&o.client.length>1
     &&!o.client.toLowerCase().startsWith('test')
-    &&!o.client.toLowerCase().startsWith('hxtest'));
+    &&!o.client.toLowerCase().startsWith('hxtest')
+    &&o.date.getFullYear()>=2020   // filter out corrupted/invalid dates
+    &&o.date.getFullYear()<=2030);
 }
 
 /* ── Helpers ── */
