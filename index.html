@@ -427,14 +427,17 @@ function process(rows){
     // Use Timestamp (col A) as primary date, fall back to Date column
     // Old table: Timestamp is col A with full datetime
     // New table: Timestamp is col A with full datetime, Date is col B
-    const rawDate=(r['Timestamp']||r['Date']||'').split(' ')[0];
+    // Extract just the date part from Timestamp (submission date)
+    const tsDate=(r['Timestamp']||'').split(' ')[0];
+    const rawDate=tsDate||(r['Date']||'').split(' ')[0];
     let date=pd(rawDate);
     // If date is invalid/corrupted, use the most recent valid date from previous rows
     if(!date && lastValidDate) date=lastValidDate;
     if(date) lastValidDate=date;
     const pay=(r['Payment Method']||'').trim();
     const sp=(r['Served By']||r['Salesperson']||'').trim();
-    const dateStr=r['Date']||rawDate||'';
+    // Display Timestamp date (when order was submitted), not manually entered Date
+    const dateStr=rawDate||r['Date']||'';
     const src=(r['Source']||'').trim();
     // SGD conversion: PTSG orders or $ prefix = SGD, convert to MYR using historical rate
     const rawTotal=(r['Total need receive']||r['Total']||'').trim();
