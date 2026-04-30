@@ -412,18 +412,27 @@ function process(rows){
     const sp=(r['Served By']||r['Salesperson']||'').trim();
     const dateStr=r['Date']||rawDate||'';
     const src=(r['Source']||'').trim();
-    // SGD conversion: PTSG orders or $ prefix = SGD, convert to MYR
-    const SGD_RATE=3.45; // update this rate as needed
+    // SGD conversion: PTSG orders or $ prefix = SGD, convert to MYR using historical rate
     const rawTotal=(r['Total need receive']||r['Total']||'').trim();
     const rawDep=(r['Deposited amount']||r['Deposited Amount']||'').trim();
     const isSGD=src==='PTSG'||rawTotal.startsWith('$');
     let totalAmt=parseFloat(rawTotal.replace(/[^0-9.]/g,''))||0;
     let depAmt=parseFloat(rawDep.replace(/[^0-9.]/g,''))||0;
-    if(isSGD){totalAmt=Math.round(totalAmt*SGD_RATE);depAmt=Math.round(depAmt*SGD_RATE);}
+    if(isSGD){
+      // Use historical rate for this order's date, fallback to latest
+      const dateKey=date?date.toISOString().slice(0,10):null;
+      const rate=SGD_RATES[dateKey]||SGD_RATES['latest']||3.45;
+      // Store original SGD values so we can recalculate after async rate fetch
+      var totalSGD=totalAmt, depSGD=depAmt;
+      totalAmt=Math.round(totalAmt*rate*100)/100;
+      depAmt=Math.round(depAmt*rate*100)/100;
+    }
     return{date,dateStr,client:(r['Client Name']||'').trim(),
       contact:r['Client Contact']||'',frame:r['Frame']||'',size:r['Size']||'',
       total:totalAmt,dep:depAmt,pay,src,invoice:r['Invoice Number']||'',
-      balance:pay==='Deposit'?Math.max(0,totalAmt-depAmt):0,sp,isSGD};
+      balance:pay==='Deposit'?Math.max(0,totalAmt-depAmt):0,sp,isSGD,
+      totalSGD:isSGD?(typeof totalSGD!=='undefined'?totalSGD:0):null,
+      depSGD:isSGD?(typeof depSGD!=='undefined'?depSGD:0):null};
   }).filter(o=>o.total>0&&o.date&&o.client&&o.client.length>1
     &&!o.client.toLowerCase().startsWith('test')
     &&!o.client.toLowerCase().startsWith('hxtest'));
@@ -937,6 +946,57 @@ function renderOrders(){
     </tr>`;
 }
 
+/* ── SGD EXCHANGE RATES ── */
+let SGD_RATES={}; // cache: { 'YYYY-MM-DD': rate, 'latest': rate }
+
+async function fetchSGDRates(orders){
+  // Get unique dates that have SGD orders
+  const sgdDates=[...new Set(
+    orders.filter(o=>o.isSGD&&o.date).map(o=>o.date.toISOString().slice(0,10))
+  )];
+  if(sgdDates.length===0)return;
+
+  // Fetch latest rate first (free, no API key needed)
+  try{
+    const res=await fetch('https://api.exchangerate-api.com/v4/latest/SGD');
+    const data=await res.json();
+    if(data.rates&&data.rates.MYR){
+      SGD_RATES['latest']=data.rates.MYR;
+    }
+  }catch(e){console.warn('Could not fetch latest SGD rate, using fallback');SGD_RATES['latest']=3.45;}
+
+  // Fetch historical rates for each unique SGD order date
+  // Using frankfurter.app (free, no key, has history)
+  const fetches=sgdDates.map(async dateStr=>{
+    if(SGD_RATES[dateStr])return; // already cached
+    try{
+      const res=await fetch(`https://api.frankfurter.app/${dateStr}?from=SGD&to=MYR`);
+      const data=await res.json();
+      if(data.rates&&data.rates.MYR){
+        SGD_RATES[dateStr]=data.rates.MYR;
+      }else{
+        SGD_RATES[dateStr]=SGD_RATES['latest']||3.45;
+      }
+    }catch(e){
+      SGD_RATES[dateStr]=SGD_RATES['latest']||3.45;
+    }
+  });
+  await Promise.all(fetches);
+
+  // Re-apply rates now that we have historical data
+  ALL.forEach(o=>{
+    if(!o.isSGD)return;
+    const dateKey=o.date?o.date.toISOString().slice(0,10):null;
+    const rate=SGD_RATES[dateKey]||SGD_RATES['latest']||3.45;
+    // Recalculate from original SGD amounts stored
+    if(o.totalSGD){
+      o.total=Math.round(o.totalSGD*rate*100)/100;
+      o.dep=Math.round(o.depSGD*rate*100)/100;
+      o.balance=o.pay==='Deposit'?Math.max(0,o.total-o.dep):0;
+    }
+  });
+}
+
 /* ── LOAD ── */
 async function loadData(){
   document.getElementById('loading').style.display='flex';
@@ -947,12 +1007,21 @@ async function loadData(){
     if(!r.ok)throw new Error();
     const txt=await r.text();
     ALL=process(parseCSV(txt));
-    console.log('Orders loaded:',ALL.length,'With SP:',ALL.filter(o=>o.sp).length);
+    console.log('Orders loaded:',ALL.length,'With SP:',ALL.filter(o=>o.sp).length,'SGD:',ALL.filter(o=>o.isSGD).length);
     populateDropdowns();
     document.getElementById('ts').textContent='Updated '+new Date().toLocaleTimeString('en-MY');
     document.getElementById('loading').style.display='none';
     document.getElementById('app').style.display='block';
     renderOverview();
+    // Fetch historical SGD rates in background and refresh when done
+    fetchSGDRates(ALL).then(()=>{
+      const sgdCount=ALL.filter(o=>o.isSGD).length;
+      if(sgdCount>0){
+        console.log('SGD rates loaded, refreshing charts...');
+        renderOverview();
+        if(document.getElementById('page-orders').classList.contains('active'))renderOrders();
+      }
+    });
   }catch(e){
     document.getElementById('loading').style.display='none';
     document.getElementById('error-msg').style.display='block';
