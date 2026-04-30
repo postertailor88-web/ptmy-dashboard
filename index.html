@@ -1046,6 +1046,21 @@ async function loadData(){
       monthlyCounts[key]=(monthlyCounts[key]||0)+1;
     });
     console.log('Orders by month:',JSON.stringify(monthlyCounts,null,2));
+
+    // Debug: show dropped rows for Feb 2026
+    const feb2026Dropped=parsed.filter(r=>{
+      const ts=(r['Timestamp']||r['Date']||'');
+      return ts.includes('/02/2026')||ts.includes('02/2026');
+    });
+    console.log('Raw Feb 2026 rows in CSV:',feb2026Dropped.length);
+    const feb2026Valid=ALL.filter(o=>o.date&&o.date.getFullYear()===2026&&o.date.getMonth()===1);
+    console.log('Valid Feb 2026 orders (after filter):',feb2026Valid.length);
+    console.log('Feb 2026 DROPPED (total=0 or bad client):',feb2026Dropped.length-feb2026Valid.length);
+    // Show first few dropped
+    feb2026Dropped.filter(r=>{
+      const total=parseFloat((r['Total need receive']||r['Total']||'').replace(/[^0-9.]/g,''))||0;
+      return total===0;
+    }).slice(0,5).forEach(r=>console.log('Dropped (total=0):',r['Client Name']||r['Client Contact'],r['Timestamp']||r['Date'],r['Total']||r['Total need receive']));
     
     populateDropdowns();
     document.getElementById('ts').textContent='Updated '+new Date().toLocaleTimeString('en-MY');
