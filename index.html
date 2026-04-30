@@ -365,17 +365,39 @@ const SP_COLORS=['#5b8dee','#2dd4bf','#a78bfa','#f5a742','#f06060','#f472b6','#3
 /* ── Parse ── */
 function parseCSV(txt){
   const lines=txt.trim().split('\n');
-  let hdrIdx=0;
+  const allRows=[];
+
+  // Find ALL header rows containing 'Client Name' + 'Payment Method'
+  // Handles multiple tables in same sheet tab
+  const hdrIdxs=[];
   for(let i=0;i<lines.length;i++){
-    if(lines[i].includes('Client Name')&&lines[i].includes('Payment Method')){hdrIdx=i;break}
+    const l=lines[i];
+    if(l.includes('Client Name')&&l.includes('Payment Method')){
+      hdrIdxs.push(i);
+    }
   }
-  const hdr=lines[hdrIdx].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
-  return lines.slice(hdrIdx+1).map(l=>{
-    const c=spl(l);const r={};
-    hdr.forEach((h,i)=>r[h]=(c[i]||'').replace(/^"|"$/g,'').trim());
-    return r;
-  });
+  console.log('Tables found:',hdrIdxs.length);
+
+  for(let t=0;t<hdrIdxs.length;t++){
+    const hdrIdx=hdrIdxs[t];
+    const nextHdrIdx=hdrIdxs[t+1]||lines.length;
+    const hdr=lines[hdrIdx].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
+
+    for(let i=hdrIdx+1;i<nextHdrIdx;i++){
+      const line=lines[i];
+      if(!line.trim())continue;
+      const c=spl(line);
+      const first=(c[0]||'').replace(/^"|"$/g,'').trim();
+      if(!first)continue;
+      const r={};
+      hdr.forEach((h,j)=>r[h]=(c[j]||'').replace(/^"|"$/g,'').trim());
+      allRows.push(r);
+    }
+  }
+  console.log('Total rows from all tables:',allRows.length);
+  return allRows;
 }
+
 function spl(l){const r=[];let c='',q=false;for(let i=0;i<l.length;i++){if(l[i]==='"'){q=!q}else if(l[i]===','&&!q){r.push(c);c=''}else c+=l[i]}r.push(c);return r}
 function pd(s){
   if(!s)return null;
@@ -403,6 +425,8 @@ function process(rows){
     const total=parseFloat((r['Total need receive']||r['Total']||'').replace(/[^0-9.]/g,''))||0;
     const dep=parseFloat((r['Deposited amount']||r['Deposited Amount']||'').replace(/[^0-9.]/g,''))||0;
     // Use Timestamp (col A) as primary date, fall back to Date column
+    // Old table: Timestamp is col A with full datetime
+    // New table: Timestamp is col A with full datetime, Date is col B
     const rawDate=(r['Timestamp']||r['Date']||'').split(' ')[0];
     let date=pd(rawDate);
     // If date is invalid/corrupted, use the most recent valid date from previous rows
