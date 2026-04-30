@@ -1033,8 +1033,20 @@ async function loadData(){
     const r=await fetch(CSV);
     if(!r.ok)throw new Error();
     const txt=await r.text();
-    ALL=process(parseCSV(txt));
-    console.log('Orders loaded:',ALL.length,'With SP:',ALL.filter(o=>o.sp).length,'SGD:',ALL.filter(o=>o.isSGD).length);
+    const parsed=parseCSV(txt);
+    ALL=process(parsed);
+    console.log('Raw CSV rows:',parsed.length);
+    console.log('Valid orders:',ALL.length,'With SP:',ALL.filter(o=>o.sp).length,'SGD:',ALL.filter(o=>o.isSGD).length);
+    
+    // Debug: count per month-year
+    const monthlyCounts={};
+    ALL.forEach(o=>{
+      if(!o.date)return;
+      const key=o.date.getFullYear()+'-'+(o.date.getMonth()+1).toString().padStart(2,'0');
+      monthlyCounts[key]=(monthlyCounts[key]||0)+1;
+    });
+    console.log('Orders by month:',JSON.stringify(monthlyCounts,null,2));
+    
     populateDropdowns();
     document.getElementById('ts').textContent='Updated '+new Date().toLocaleTimeString('en-MY');
     document.getElementById('loading').style.display='none';
