@@ -372,30 +372,45 @@ function parseCSV(txt){
 function spl(l){const r=[];let c='',q=false;for(let i=0;i<l.length;i++){if(l[i]==='"'){q=!q}else if(l[i]===','&&!q){r.push(c);c=''}else c+=l[i]}r.push(c);return r}
 function pd(s){
   if(!s)return null;
+  // Strip time portion if present (e.g. "17/03/2026 11:25:30" -> "17/03/2026")
+  const datePart=s.split(' ')[0].trim();
   // Try DD/MM/YYYY
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(m)return new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`);
+  let m=datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m){
+    const yr=parseInt(m[3]);
+    if(yr<2020||yr>2030)return null; // filter corrupted years
+    return new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`);
+  }
   // Try YYYY-MM-DD
-  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m)return new Date(s.slice(0,10));
+  m=datePart.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m){
+    const yr=parseInt(m[1]);
+    if(yr<2020||yr>2030)return null;
+    return new Date(datePart);
+  }
   return null;
 }
 function process(rows){
+  let lastValidDate=null; // inherit date from previous row if corrupted
   return rows.map(r=>{
     const total=parseFloat((r['Total need receive']||r['Total']||'').replace(/[^0-9.]/g,''))||0;
     const dep=parseFloat((r['Deposited amount']||r['Deposited Amount']||'').replace(/[^0-9.]/g,''))||0;
-    const date=pd(r['Date']||'');
+    // Use Timestamp (col A) as primary date, fall back to Date column
+    const rawDate=(r['Timestamp']||r['Date']||'').split(' ')[0];
+    let date=pd(rawDate);
+    // If date is invalid/corrupted, use the most recent valid date from previous rows
+    if(!date && lastValidDate) date=lastValidDate;
+    if(date) lastValidDate=date;
     const pay=(r['Payment Method']||'').trim();
     const sp=(r['Served By']||r['Salesperson']||'').trim();
-    return{date,dateStr:r['Date']||'',client:(r['Client Name']||'').trim(),
+    const dateStr=r['Date']||rawDate||'';
+    return{date,dateStr,client:(r['Client Name']||'').trim(),
       contact:r['Client Contact']||'',frame:r['Frame']||'',size:r['Size']||'',
       total,dep,pay,src:(r['Source']||'').trim(),invoice:r['Invoice Number']||'',
       balance:pay==='Deposit'?Math.max(0,total-dep):0,sp};
   }).filter(o=>o.total>0&&o.date&&o.client&&o.client.length>1
     &&!o.client.toLowerCase().startsWith('test')
-    &&!o.client.toLowerCase().startsWith('hxtest')
-    &&o.date.getFullYear()>=2020   // filter out corrupted/invalid dates
-    &&o.date.getFullYear()<=2030);
+    &&!o.client.toLowerCase().startsWith('hxtest'));
 }
 
 /* ── Helpers ── */
