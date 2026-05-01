@@ -999,18 +999,15 @@ function renderSalesperson(){
             // Lightning
             +'<div style="position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:11px;animation:bolt 2.5s ease-in-out infinite;animation-delay:'+(i*0.8)+'s;line-height:1">&#9889;</div>'
           +'</div>'
-          // Hover tooltip - pops out at bar tip
-          +'<div class="race-tip" style="position:absolute;top:50%;right:-12px;'
-            +'transform:translateY(-50%) translateX(100%) scale(0.8);'
-            +'background:linear-gradient(135deg,#1a1f2e,#0d1117);'
-            +'border:1.5px solid '+bc2+';'
-            +'border-radius:10px;padding:6px 14px;'
-            +'font-size:14px;font-weight:800;color:'+bc2+';'
+          // Hover tooltip - glowing colored text at bar tip, no box
+          +'<div class="race-tip" style="position:absolute;top:50%;right:-14px;'
+            +'transform:translateY(-50%) translateX(100%) scale(0.85);'
+            +'font-size:16px;font-weight:900;color:'+bc2+';'
             +'white-space:nowrap;pointer-events:none;opacity:0;'
             +'transition:opacity .2s ease,transform .2s ease;'
             +'z-index:20;'
-            +'box-shadow:0 4px 20px '+bc2+'55,0 0 0 1px '+bc2+'22;'
-            +'text-shadow:0 0 10px '+bc2+';">'+fmtVal(item.val)+'</div>'
+            +'text-shadow:0 0 12px '+bc2+',0 0 24px '+bc2+'88,0 0 40px '+bc2+'44;'
+            +'letter-spacing:0.5px;">'+fmtVal(item.val)+'</div>'
         +'</div>'
         +'<div style="width:100px;text-align:right;font-size:13px;font-weight:800;color:'+bc2+';flex-shrink:0;white-space:nowrap">'+fmtVal(item.val)+'</div>'
         +'</div>';
