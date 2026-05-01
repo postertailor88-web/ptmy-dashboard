@@ -357,7 +357,8 @@ tbody td{padding:8px 12px;white-space:nowrap}
         <button onclick="exportExcel()" style="background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:#7ba7f5;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export Excel</button>
       </div>
     </div>
-    <div class="twrap"><table><thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody><tfoot id="o-tfoot"></tfoot></table></div>
+    <div class="twrap"><table><thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
+    <div id="o-summary"></div>
   </div>
 </div>
 </div>
@@ -1042,24 +1043,34 @@ function renderOrders(){
     </tr>`).join('')
     ||'<tr><td colspan="9" class="no-data">No orders found</td></tr>';
 
-  // Summary footer
+  // Summary bar below table
   const totalRev=orders.reduce((s,o)=>s+o.total,0);
   const totalDep=orders.reduce((s,o)=>s+o.dep,0);
   const totalBal=orders.reduce((s,o)=>s+o.balance,0);
   const paidCount=orders.filter(o=>o.pay==='FullyPaid').length;
   const depCount=orders.filter(o=>o.pay==='Deposit').length;
-  document.getElementById('o-tfoot').innerHTML=`
-    <tr style="background:var(--surface2);border-top:2px solid var(--border2)">
-      <td colspan="4" style="padding:10px 12px;font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap">
+  document.getElementById('o-summary').innerHTML=`
+    <div style="display:flex;align-items:center;gap:24px;padding:12px 16px;background:var(--surface2);border-top:2px solid var(--border2);border-radius:0 0 var(--r) var(--r);flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:600;color:var(--text2)">
         TOTAL — ${orders.length} orders &nbsp;|&nbsp;
         <span style="color:var(--green)">${paidCount} paid</span> &nbsp;|&nbsp;
         <span style="color:var(--amber)">${depCount} deposit</span>
-      </td>
-      <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--blue2)">${rm(totalRev)}</td>
-      <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green)">${rm(totalDep)}</td>
-      <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red)">${rm(totalBal)}</td>
-      <td colspan="3"></td>
-    </tr>`;
+      </span>
+      <span style="margin-left:auto;display:flex;gap:24px;flex-wrap:wrap">
+        <span>
+          <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:6px">Revenue</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--blue2)">${rm(totalRev)}</span>
+        </span>
+        <span>
+          <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:6px">Deposited</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--green)">${rm(totalDep)}</span>
+        </span>
+        <span>
+          <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:6px">Balance</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--red)">${rm(totalBal)}</span>
+        </span>
+      </span>
+    </div>`;
 }
 
 /* ── EXPORT ── */
