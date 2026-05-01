@@ -1092,6 +1092,54 @@ function renderOrders(){
   }
 }
 
+/* ── EXPORT ── */
+function getFilteredOrders(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  let orders=filterByDropdown(ALL,'ord-month','ord-year');
+  if(q)orders=orders.filter(o=>o.client.toLowerCase().includes(q));
+  if(pp!=='all')orders=orders.filter(o=>o.pay===pp);
+  if(os!=='all')orders=orders.filter(o=>o.src===os);
+  return orders.sort((a,b)=>b.date-a.date);
+}
+function exportCSV(){
+  const orders=getFilteredOrders();
+  const headers=['Date','Order ID','Client Name','Contact','Frame','Size','Total (RM)','Deposited','Balance','Payment','Source','Invoice','Salesperson','SGD'];
+  const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const lines=[headers.map(esc).join(',')];
+  orders.forEach(o=>lines.push([o.dateStr,o.orderId||'',o.client,o.contact,o.frame,o.size,o.total,o.dep||'',o.balance||'',o.pay,o.src,o.invoice,o.sp||'',o.isSGD?'Yes':''].map(esc).join(',')));
+  const blob=new Blob([lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const mEl=document.getElementById('ord-month');
+  const yEl=document.getElementById('ord-year');
+  a.href=url;
+  a.download='PTMY_Orders_'+mEl.options[mEl.selectedIndex].text+'-'+yEl.options[yEl.selectedIndex].text+'_'+orders.length+'orders.csv';
+  a.click();URL.revokeObjectURL(url);
+}
+function exportExcel(){
+  const orders=getFilteredOrders();
+  const mEl=document.getElementById('ord-month');
+  const yEl=document.getElementById('ord-year');
+  const period=mEl.options[mEl.selectedIndex].text+' '+yEl.options[yEl.selectedIndex].text;
+  const tRev=orders.reduce((s,o)=>s+o.total,0);
+  const tDep=orders.reduce((s,o)=>s+o.dep,0);
+  const tBal=orders.reduce((s,o)=>s+o.balance,0);
+  const paid=orders.filter(o=>o.pay==='FullyPaid').length;
+  const dep=orders.filter(o=>o.pay==='Deposit').length;
+  let h='<html><head><meta charset="UTF-8"><style>body{font-family:Calibri,sans-serif}th{background:#1a3c6e;color:#fff;padding:6px 10px;border:1px solid #ccc}td{padding:5px 10px;border:1px solid #ddd}tr:nth-child(even)td{background:#f5f8ff}.f td{background:#1a3c6e;color:#fff;font-weight:bold}</style></head><body>'
+    +'<p style="font-size:14pt;font-weight:bold;color:#1a3c6e">PT Malaysia Sales Export</p>'
+    +'<p>Period: '+period+' | '+orders.length+' orders | '+paid+' paid | '+dep+' deposit | Exported: '+new Date().toLocaleString('en-MY')+'</p><br>'
+    +'<table><thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th><th>Salesperson</th></tr></thead><tbody>';
+  orders.forEach(o=>{h+='<tr><td>'+o.dateStr+'</td><td>'+(o.orderId||'')+'</td><td><b>'+o.client+'</b></td><td>'+o.frame+'</td><td>RM '+o.total.toFixed(2)+'</td><td>'+(o.dep?'RM '+o.dep.toFixed(2):'')+'</td><td>'+(o.balance?'RM '+o.balance.toFixed(2):'')+'</td><td>'+(o.pay==='FullyPaid'?'Paid':'Deposit')+'</td><td>'+o.src+'</td><td>'+(o.invoice||'')+'</td><td>'+(o.sp||'')+'</td></tr>';});
+  h+='</tbody><tfoot class="f"><tr><td colspan="4">TOTAL — '+orders.length+' orders</td><td>RM '+tRev.toFixed(2)+'</td><td>RM '+tDep.toFixed(2)+'</td><td>RM '+tBal.toFixed(2)+'</td><td colspan="4"></td></tr></tfoot></table></body></html>';
+  const blob=new Blob([h],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='PTMY_Orders_'+period.replace(' ','-')+'_'+orders.length+'orders.xls';
+  a.click();URL.revokeObjectURL(url);
+}
+
 async function fetchSGDRates(orders){
   // Only fetch if there are SGD orders
   const hasSGD=orders.some(o=>o.isSGD);
