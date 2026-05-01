@@ -374,15 +374,26 @@ const SP_COLORS=['#5b8dee','#2dd4bf','#a78bfa','#f5a742','#f06060','#f472b6','#3
 
 /* ── Parse ── */
 function parseCSV(txt){
-  const lines=txt.trim().split('\n');
-  const allRows=[];
+  // Handle multiline quoted fields by parsing char by char
+  const rows=[];
+  let cur='', inQ=false;
+  for(let i=0;i<txt.length;i++){
+    const ch=txt[i];
+    if(ch==='"'){inQ=!inQ;cur+=ch;continue;}
+    if(!inQ&&(ch==='\n'||(ch==='\r'&&txt[i+1]!=='\n'))){
+      if(cur.trim())rows.push(cur);
+      cur='';
+      continue;
+    }
+    if(!inQ&&ch==='\r')continue; // skip \r in \r\n
+    cur+=ch;
+  }
+  if(cur.trim())rows.push(cur);
 
-  // Find ALL header rows containing 'Client Name' + 'Payment Method'
-  // Handles multiple tables in same sheet tab
+  const allRows=[];
   const hdrIdxs=[];
-  for(let i=0;i<lines.length;i++){
-    const l=lines[i];
-    if(l.includes('Client Name')&&l.includes('Payment Method')){
+  for(let i=0;i<rows.length;i++){
+    if(rows[i].includes('Client Name')&&rows[i].includes('Payment Method')){
       hdrIdxs.push(i);
     }
   }
@@ -390,18 +401,17 @@ function parseCSV(txt){
 
   for(let t=0;t<hdrIdxs.length;t++){
     const hdrIdx=hdrIdxs[t];
-    const nextHdrIdx=hdrIdxs[t+1]||lines.length;
-    const hdr=lines[hdrIdx].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
+    const nextHdrIdx=hdrIdxs[t+1]||rows.length;
+    const hdr=spl(rows[hdrIdx]).map(h=>h.replace(/^"|"$/g,'').trim());
 
     for(let i=hdrIdx+1;i<nextHdrIdx;i++){
-      const line=lines[i];
+      const line=rows[i];
       if(!line.trim())continue;
       const c=spl(line);
       const first=(c[0]||'').replace(/^"|"$/g,'').trim();
       if(!first)continue;
       const r={};
       hdr.forEach((h,j)=>r[h]=(c[j]||'').replace(/^"|"$/g,'').trim());
-      // Store raw cols array so we can do positional lookup if named lookup fails
       r['__cols']=c.map(v=>(v||'').replace(/^"|"$/g,'').trim());
       r['__hdr']=hdr;
       allRows.push(r);
