@@ -357,7 +357,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
         <button onclick="exportExcel()" style="background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:#7ba7f5;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export Excel</button>
       </div>
     </div>
-    <div class="twrap"><table><thead><tr><th>Date</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody><tfoot id="o-tfoot"></tfoot></table></div>
+    <div class="twrap"><table><thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody><tfoot id="o-tfoot"></tfoot></table></div>
   </div>
 </div>
 </div>
@@ -411,7 +411,12 @@ function parseCSV(txt){
       const first=(c[0]||'').replace(/^"|"$/g,'').trim();
       if(!first)continue;
       const r={};
-      hdr.forEach((h,j)=>r[h]=(c[j]||'').replace(/^"|"$/g,'').trim());
+      hdr.forEach((h,j)=>{
+        let v=(c[j]||'').replace(/^"|"$/g,'').trim();
+        // Clean newlines and extra spaces from all field values (especially addresses)
+        v=v.replace(/[\r\n]+/g,' ').replace(/\s{2,}/g,' ').trim();
+        r[h]=v;
+      });
       r['__cols']=c.map(v=>(v||'').replace(/^"|"$/g,'').trim());
       r['__hdr']=hdr;
       allRows.push(r);
@@ -530,7 +535,8 @@ function process(rows){
       total:totalAmt,dep:depAmt,pay,src,invoice:r['Invoice Number']||'',
       balance:pay==='Deposit'?Math.max(0,totalAmt-depAmt):0,sp,isSGD,
       totalSGD:isSGD?(typeof totalSGD!=='undefined'?totalSGD:0):null,
-      depSGD:isSGD?(typeof depSGD!=='undefined'?depSGD:0):null};
+      depSGD:isSGD?(typeof depSGD!=='undefined'?depSGD:0):null,
+      orderId:(r['Order ID']||r['order id']||r['OrderID']||r['Invoice Number']||'').trim()};
   }).filter(o=>o.total>0&&o.date&&o.client&&o.client.length>1
     &&!o.client.toLowerCase().startsWith('test')
     &&!o.client.toLowerCase().startsWith('hxtest'));
@@ -1014,6 +1020,7 @@ function renderOrders(){
   document.getElementById('o-tbody').innerHTML=orders.map(o=>`
     <tr>
       <td class="td-mono td-dim">${o.dateStr}</td>
+      <td class="td-mono" style="color:var(--text3);font-size:11px">${o.orderId||'—'}</td>
       <td class="td-name">${o.client||'—'}</td>
       <td style="color:var(--text2);font-size:11px">${o.frame||'—'}</td>
       <td class="td-amt">
@@ -1067,11 +1074,11 @@ function getFilteredOrders(){
 
 function exportCSV(){
   const orders=getFilteredOrders();
-  const headers=['Date','Client Name','Contact','Frame','Size','Total (RM)','Deposited','Balance','Payment','Source','Invoice','Salesperson','SGD'];
+  const headers=['Date','Order ID','Client Name','Contact','Frame','Size','Total (RM)','Deposited','Balance','Payment','Source','Invoice','Salesperson','SGD'];
   const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   const lines=[headers.map(esc).join(',')];
   orders.forEach(o=>{
-    lines.push([o.dateStr,o.client,o.contact,o.frame,o.size,o.total,o.dep||'',o.balance||'',o.pay,o.src,o.invoice,o.sp||'',o.isSGD?'Yes':''].map(esc).join(','));
+    lines.push([o.dateStr,o.orderId||'',o.client,o.contact,o.frame,o.size,o.total,o.dep||'',o.balance||'',o.pay,o.src,o.invoice,o.sp||'',o.isSGD?'Yes':''].map(esc).join(','));
   });
   const csv=lines.join('\r\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
@@ -1147,7 +1154,7 @@ ${orders.map(o=>`<tr>
 </tr>`).join('')}
 </tbody>
 <tfoot class="footer"><tr>
-  <td colspan="5"><b>TOTAL — ${orders.length} orders</b></td>
+  <td colspan="6"><b>TOTAL — ${orders.length} orders</b></td>
   <td class="amt">RM ${Math.round(totalRev).toLocaleString()}</td>
   <td class="dep-cell">RM ${Math.round(totalDep).toLocaleString()}</td>
   <td class="bal">RM ${Math.round(totalBal).toLocaleString()}</td>
