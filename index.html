@@ -1050,11 +1050,14 @@ function renderOrders(){
   const depCount=orders.filter(o=>o.pay==='Deposit').length;
   document.getElementById('o-tfoot').innerHTML=`
     <tr style="background:var(--surface2);border-top:2px solid var(--border2)">
-      <td colspan="4" style="padding:10px 12px;font-size:11px;font-weight:600;color:var(--text2)">
-        TOTAL — ${orders.length} orders &nbsp;|&nbsp; 
+      <td style="padding:10px 12px;font-size:11px;font-weight:600;color:var(--text2)" colspan="2">
+        TOTAL — ${orders.length} orders
+      </td>
+      <td style="padding:10px 12px;font-size:11px;color:var(--text2)">
         <span style="color:var(--green)">${paidCount} paid</span> &nbsp;|&nbsp; 
         <span style="color:var(--amber)">${depCount} deposit</span>
       </td>
+      <td></td>
       <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--blue2)">${rm(totalRev)}</td>
       <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green)">${rm(totalDep)}</td>
       <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red)">${rm(totalBal)}</td>
