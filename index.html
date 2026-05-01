@@ -167,6 +167,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
   </div>
   <div class="hdr-r">
     <span class="ts" id="ts">—</span>
+  <span class="ts" id="sgd-rate" style="display:none;color:var(--green)">SGD rate: —</span>
     <button class="btn-refresh" onclick="loadData()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.219-8.56"/><path d="M21 3v9h-9"/></svg>
       Refresh
@@ -323,7 +324,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
 <!-- ═══ ALL ORDERS ═══ -->
 <div class="page" id="page-orders">
 <div class="main">
-  <div class="toolbar" style="margin-bottom:14px">
+  <div class="toolbar" style="margin-bottom:8px">
     <div class="search-wrap">
       <span class="si">🔍</span>
       <input class="search-input" id="q" placeholder="Search client…" oninput="renderOrders()">
@@ -337,14 +338,15 @@ tbody td{padding:8px 12px;white-space:nowrap}
     <button class="chip a-teal" data-pp="all" onclick="setPP('all')">All</button>
     <button class="chip" data-pp="FullyPaid" onclick="setPP('FullyPaid')">Paid</button>
     <button class="chip" data-pp="Deposit" onclick="setPP('Deposit')">Deposit</button>
-    <div class="sep"></div>
+  </div>
+  <div class="toolbar" style="margin-bottom:14px">
     <span class="tlabel">Source</span>
     <button class="chip a-teal" data-os="all" onclick="setOS('all')">All</button>
     <button class="chip" data-os="PTMY" onclick="setOS('PTMY')">PTMY</button>
     <button class="chip" data-os="FS2" onclick="setOS('FS2')">FS2</button>
     <button class="chip" data-os="Dealer" onclick="setOS('Dealer')">Dealer</button>
     <button class="chip" data-os="PTSG" onclick="setOS('PTSG')">PTSG 🇸🇬</button>
-    <button class="chip" data-os="Shopee" onclick="setOS('Shopee')">Shopee</button>
+    <button class="chip" data-os="Shopee" onclick="setOS('Shopee')">Shopee 🛍</button>
   </div>
   <div class="tcard">
     <div class="thead-bar">
@@ -474,7 +476,7 @@ function process(rows){
 }
 
 /* ── Helpers ── */
-const rm=n=>'RM '+Math.round(n||0).toLocaleString();
+const rm=n=>'RM '+(+(n||0)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 const pct=(a,b)=>b?Math.round(a/b*100)+'%':'0%';
 function dc(id){if(CH[id]){CH[id].destroy();delete CH[id]}}
 const TO={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
@@ -953,7 +955,17 @@ function renderOrders(){
       <td class="td-mono td-dim">${o.dateStr}</td>
       <td class="td-name">${o.client||'—'}</td>
       <td style="color:var(--text2);font-size:11px">${o.frame||'—'}</td>
-      <td class="td-amt">${rm(o.total)}${o.isSGD?'<span style="font-size:9px;color:var(--green);margin-left:4px">SGD→MYR</span>':''}</td>
+      <td class="td-amt">
+        ${o.isSGD
+          ? `<div style="line-height:1.6">
+              <span style="color:var(--blue2);font-family:'JetBrains Mono',monospace">RM ${Math.round(o.total).toLocaleString()}</span>
+              <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">
+                SGD ${o.totalSGD?o.totalSGD.toLocaleString():'—'} × ${(SGD_RATES['latest']||3.45).toFixed(4)}
+              </div>
+            </div>`
+          : rm(o.total)
+        }
+      </td>
       <td class="td-ok">${o.dep?rm(o.dep):'—'}</td>
       <td class="${o.balance?'td-bal':'td-dim'}">${o.balance?rm(o.balance):'—'}</td>
       <td>${o.pay==='FullyPaid'?'<span class="badge b-paid">Paid</span>':'<span class="badge b-dep">Deposit</span>'}</td>
@@ -1115,6 +1127,9 @@ async function fetchSGDRates(orders){
         o.balance=o.pay==='Deposit'?Math.max(0,o.total-o.dep):0;
       });
       console.log('SGD rate fetched:',SGD_RATES['latest']);
+      // Show live rate in header
+      const rateEl=document.getElementById('sgd-rate');
+      if(rateEl){rateEl.textContent='SGD 1 = RM '+SGD_RATES['latest'].toFixed(4)+' (live)';rateEl.style.display='inline';}
       renderOverview();
     }
   }catch(e){
@@ -1138,6 +1153,19 @@ async function loadData(){
     ALL=process(parsed);
     console.log('Raw CSV rows:',parsed.length);
     console.log('Valid orders:',ALL.length,'With SP:',ALL.filter(o=>o.sp).length,'SGD:',ALL.filter(o=>o.isSGD).length);
+    // Debug: find Mar 16 rows specifically
+    const mar16=parsed.filter(r=>{
+      const ts=r['Timestamp']||r['Date']||'';
+      return ts.includes('16/03/2026');
+    });
+    console.log('Mar 16/03/2026 raw rows:',mar16.length);
+    mar16.forEach(r=>console.log('  Mar16 row:',r['Client Name'],
+      '| Total:',r['Total']||r['Total need receive'],
+      '| Pay:',r['Payment Method'],
+      '| Source:',r['Source']
+    ));
+    const mar16valid=ALL.filter(o=>o.date&&o.date.getMonth()===2&&o.date.getDate()===16&&o.date.getFullYear()===2026);
+    console.log('Mar 16 VALID orders after filter:',mar16valid.length);
     
     // Debug: count per month-year
     const monthlyCounts={};
