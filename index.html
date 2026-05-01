@@ -250,11 +250,12 @@ tbody td{padding:8px 12px;white-space:nowrap}
       <div class="card"><div class="card-title"><span class="ctd" style="background:var(--blue)"></span>Revenue by Salesperson</div><div class="cw" style="height:200px"><canvas id="cSpRev"></canvas></div></div>
       <div class="card"><div class="card-title"><span class="ctd" style="background:var(--purple)"></span>Orders by Salesperson</div><div class="cw" style="height:200px"><canvas id="cSpOrd"></canvas></div></div>
     </div>
-    <div class="card" style="margin-bottom:12px"><div class="card-title"><span class="ctd" style="background:var(--teal)"></span>Monthly Revenue per Salesperson</div><div class="cw" style="height:200px"><canvas id="cSpTrend"></canvas></div></div>
-    <div class="tcard">
-      <div class="thead-bar"><span class="thead-title">Salesperson Order Details</span><span class="thead-count" id="sp-tcount">—</span></div>
-      <div class="twrap"><table><thead><tr><th>Date</th><th>Salesperson</th><th>Client</th><th>Frame</th><th>Total</th><th>Payment</th><th>Source</th></tr></thead><tbody id="sp-tbody"></tbody></table></div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title"><span class="ctd" style="background:var(--teal)"></span>Revenue by Salesperson — Monthly Breakdown</div>
+      <div class="leg" id="legSpTrend"></div>
+      <div class="cw" style="height:220px"><canvas id="cSpTrend" role="img" aria-label="Monthly revenue grouped bar"></canvas></div>
     </div>
+
   </div>
 </div>
 </div>
@@ -815,34 +816,48 @@ function renderSalesperson(){
   const monthsSet=new Set();orders.filter(o=>o.sp).forEach(o=>{if(o.date)monthsSet.add(`${o.date.getFullYear()}-${String(o.date.getMonth()).padStart(2,'0')}`)});
   const mKeys=[...monthsSet].sort();
   const mLabels=mKeys.map(k=>{const[y,m]=k.split('-');return MONTHS[parseInt(m)].slice(0,3)+' '+y});
-  dc('cSpTrend');
-  CH['cSpTrend']=new Chart(document.getElementById('cSpTrend'),{type:'line',
-    data:{labels:mLabels,datasets:sps.map((sp,i)=>{
-      const cfg=SP_CONFIG[sp.name]||{color:SP_COLORS[i%SP_COLORS.length]};
-      return{
-      label:sp.name,
-      data:mKeys.map(k=>{
-        const[y,m]=k.split('-');
-        // Sum split revenue for this sp in this month
-        let rev=0;
-        orders.filter(o=>o.date&&o.date.getFullYear()===parseInt(y)&&o.date.getMonth()===parseInt(m)).forEach(o=>{
-          splitSharedOrder(o).forEach(({sp:s,share})=>{if(s===sp.name)rev+=o.total*share});
-        });
-        return Math.round(rev);
-      }),
-      borderColor:cfg.color,backgroundColor:cfg.color+'18',
-      tension:.35,fill:true,pointRadius:3,borderWidth:2,pointBackgroundColor:cfg.color
-    }})},
-    options:{...TO,scales:{x:{ticks:{...TX},grid:{display:false}},y:{ticks:{...TX,callback:v=>'RM'+Math.round(v/1000)+'k'},grid:GR}},plugins:{legend:{display:true,labels:{color:'#8b90a0',font:{size:11},boxWidth:10,boxHeight:6,padding:14}},tooltip:{backgroundColor:'#2c3140',titleColor:'#e2e4e9',bodyColor:'#8b90a0',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,callbacks:{label:c=>c.dataset.label+': RM '+c.parsed.y.toLocaleString()}}}}
+    dc('cSpTrend');
+  CH['cSpTrend']=new Chart(document.getElementById('cSpTrend'),{type:'bar',
+    data:{
+      labels:mLabels,
+      datasets:sps.map((sp,i)=>{
+        const cfg=SP_CONFIG[sp.name]||{color:SP_COLORS[i%SP_COLORS.length]};
+        return{
+          label:sp.name,
+          data:mKeys.map(k=>{
+            const[y,m]=k.split('-');
+            let rev=0;
+            orders.filter(o=>o.date&&o.date.getFullYear()===parseInt(y)&&o.date.getMonth()===parseInt(m)).forEach(o=>{
+              splitSharedOrder(o).forEach(({sp:s,share})=>{if(s===sp.name)rev+=o.total*share});
+            });
+            return Math.round(rev);
+          }),
+          backgroundColor:cfg.color+'cc',
+          borderColor:cfg.color,
+          borderWidth:1,
+          borderRadius:4,
+          borderSkipped:false
+        };
+      })
+    },
+    options:{...TO,
+      scales:{
+        x:{ticks:{...TX},grid:{display:false}},
+        y:{ticks:{...TX,callback:v=>'RM'+Math.round(v/1000)+'k'},grid:GR}
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#2c3140',titleColor:'#e2e4e9',bodyColor:'#8b90a0',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,
+          callbacks:{label:c=>c.dataset.label+': RM '+c.parsed.y.toLocaleString()}}
+      }
+    }
   });
+  document.getElementById('legSpTrend').innerHTML=sps.map((sp,i)=>{
+    const cfg=SP_CONFIG[sp.name]||{color:SP_COLORS[i%SP_COLORS.length]};
+    return '<div class="leg-i"><span class="leg-d" style="background:'+cfg.color+'"></span>'+sp.name+'</div>';
+  }).join('');
 
-  // Table
-  const sorted=orders.filter(o=>o.sp).sort((a,b)=>b.date-a.date);
-  document.getElementById('sp-tcount').textContent=sorted.length+' orders';
-  const sb=s=>{if(s==='PTMY')return`<span class="badge b-ptmy">PTMY</span>`;if(s==='FS2')return`<span class="badge b-fs2">FS2</span>`;if(s==='Dealer')return`<span class="badge b-dealer">Dealer</span>`;return`<span class="badge b-other">${s||'—'}</span>`};
-  document.getElementById('sp-tbody').innerHTML=sorted.slice(0,30).map(o=>`
-    <tr><td class="td-mono td-dim">${o.dateStr}</td><td class="td-name">${o.sp}</td><td style="color:var(--text2)">${o.client}</td><td style="font-size:11px;color:var(--text3)">${o.frame}</td><td class="td-amt">${rm(o.total)}</td><td>${o.pay==='FullyPaid'?'<span class="badge b-paid">Paid</span>':'<span class="badge b-dep">Deposit</span>'}</td><td>${sb(o.src)}</td></tr>`).join('')
-    ||'<tr><td colspan="7" class="no-data">No orders</td></tr>';
+
 }
 
 /* ── DAY ANALYSIS ── */
