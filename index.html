@@ -999,8 +999,8 @@ function renderSalesperson(){
             // Lightning
             +'<div style="position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:11px;animation:bolt 2.5s ease-in-out infinite;animation-delay:'+(i*0.8)+'s;line-height:1">&#9889;</div>'
           +'</div>'
-          // Hover tooltip
-          +'<div class="race-tip" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,20,0.92);border:1px solid '+bc2+'66;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;color:'+bc2+';white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10">'+fmtVal(item.val)+'</div>'
+          // Hover tooltip - appears at right end of bar
+          +'<div class="race-tip" style="position:absolute;top:50%;right:-8px;transform:translateY(-50%) translateX(100%);background:rgba(10,10,20,0.92);border:1px solid '+bc2+'88;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:'+bc2+';white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10;box-shadow:0 2px 12px rgba(0,0,0,0.4)">'+fmtVal(item.val)+'</div>'
         +'</div>'
         +'<div style="width:100px;text-align:right;font-size:13px;font-weight:800;color:'+bc2+';flex-shrink:0;white-space:nowrap">'+fmtVal(item.val)+'</div>'
         +'</div>';
