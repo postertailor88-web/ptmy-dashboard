@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PT Malaysia — Sales Dashboard</title>
+<!-- build:20260501_075025 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -358,6 +359,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
       </div>
     </div>
     <div class="twrap"><table><thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
+    <div id="o-summary"></div>
   </div>
 </div>
 </div>
@@ -1042,6 +1044,37 @@ function renderOrders(){
       <td class="td-mono td-dim" style="font-size:10px">${o.invoice||'—'}</td>
     </tr>`).join('')
     ||'<tr><td colspan="9" class="no-data">No orders found</td></tr>';
+
+  // Summary bar
+  const totalRev=orders.reduce((s,o)=>s+o.total,0);
+  const totalDep=orders.reduce((s,o)=>s+o.dep,0);
+  const totalBal=orders.reduce((s,o)=>s+o.balance,0);
+  const paidCount=orders.filter(o=>o.pay==='FullyPaid').length;
+  const depCount=orders.filter(o=>o.pay==='Deposit').length;
+  const sumEl=document.getElementById('o-summary');
+  if(sumEl){
+    sumEl.innerHTML=`<div style="display:flex;align-items:center;flex-wrap:wrap;gap:16px;padding:12px 18px;background:var(--surface2);border-top:2px solid var(--border2);border-radius:0 0 var(--r) var(--r)">
+      <span style="font-size:11px;font-weight:600;color:var(--text2)">
+        ${orders.length} orders &nbsp;·&nbsp;
+        <span style="color:var(--green)">${paidCount} paid</span> &nbsp;·&nbsp;
+        <span style="color:var(--amber)">${depCount} deposit</span>
+      </span>
+      <span style="margin-left:auto;display:flex;gap:20px;flex-wrap:wrap">
+        <span style="display:flex;flex-direction:column;align-items:flex-end">
+          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Total Revenue</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--blue2)">${rm(totalRev)}</span>
+        </span>
+        <span style="display:flex;flex-direction:column;align-items:flex-end">
+          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Deposited</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--green)">${rm(totalDep)}</span>
+        </span>
+        <span style="display:flex;flex-direction:column;align-items:flex-end">
+          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Balance Due</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--red)">${rm(totalBal)}</span>
+        </span>
+      </span>
+    </div>`;
+  }
 }
 
 async function fetchSGDRates(orders){
