@@ -453,35 +453,56 @@ function process(rows){
     const dateStr=rawDate||r['Date']||'';
     const src=(r['Source']||'').trim();
     // SGD conversion: PTSG orders or $ prefix = SGD, convert to MYR using historical rate
-    // Try all possible column names for total amount
-    // Some rows may have undefined if row has fewer cols than header
-    let rawTotal=(r['Total need receive']||r['Total']||r['Grand Total']||r['Amount']||'').trim();
-    // If still empty, use smart positional lookup
-    if(!rawTotal && r['__hdr'] && r['__cols']){
+    // Smart total detection - handles column shifts from merged cells/extra spaces
+    // Strategy: named lookup first, then find by scanning between known anchor columns
+    let rawTotal=(r['Total need receive']||r['Total']||'').trim();
+    let rawDep=(r['Deposited amount']||r['Deposited Amount']||'').trim();
+    
+    if(r['__hdr'] && r['__cols']){
       const hdr=r['__hdr'];
       const cols=r['__cols'];
-      // Find Total between "East Malaysia Shipping Fees" and "Redo"
-      const eastIdx=hdr.findIndex(h=>h.includes('East Malaysia'));
-      const redoIdx=hdr.findIndex(h=>h.toLowerCase().includes('redo'));
-      const totalIdx=hdr.indexOf('Total');
       
-      // Try exact position first
-      if(totalIdx>=0 && cols[totalIdx] && parseFloat(cols[totalIdx].replace(/[^0-9.]/g,''))>0){
-        rawTotal=cols[totalIdx];
-      }
-      // If row is shorter than header, Total might be at a different position
-      // Scan backwards from end of actual cols to find last numeric value
-      if(!rawTotal){
-        for(let i=cols.length-1;i>=Math.max(0,cols.length-6);i--){
-          const v=cols[i].replace(/[^0-9.]/g,'');
-          if(v && parseFloat(v)>0){
-            rawTotal=cols[i];
-            break;
+      // Find anchor columns that are reliable identifiers
+      const payIdx=hdr.findIndex(h=>h==='Payment Method');
+      const eastIdx=hdr.findIndex(h=>h.includes('East Malaysia'));
+      const totalHdrIdx=hdr.findIndex(h=>h==='Total');
+      const depHdrIdx=hdr.findIndex(h=>h==='Deposited Amount'||h==='Deposited amount');
+      
+      // If named lookup failed, use anchor-based search
+      if(!rawTotal && payIdx>=0){
+        // Total is always a few cols AFTER Payment Method
+        // Scan forward from payIdx+2 to payIdx+6 for first positive number
+        for(let i=payIdx+1;i<=Math.min(payIdx+5,cols.length-1);i++){
+          const v=(cols[i]||'').replace(/[^0-9.]/g,'');
+          if(v && parseFloat(v)>0 && parseFloat(v)>50){
+            // Check it's not a postcode (4-5 digits only) or phone number
+            const num=parseFloat(v);
+            if(num>=50 && num<=99999 && v.length<=7){
+              // likely a price - but skip if it looks like a postcode (exactly 5 digits, no decimal)
+              if(!(v.length===5 && !v.includes('.'))){
+                rawTotal=cols[i];
+                break;
+              }
+            }
           }
         }
       }
+      
+      // Better approach: Total is ALWAYS right after East Malaysia Shipping Fees
+      if(!rawTotal && eastIdx>=0){
+        // Total should be at eastIdx+1
+        for(let i=eastIdx+1;i<=eastIdx+3;i++){
+          const v=(cols[i]||'').replace(/[^0-9.]/g,'');
+          if(v && parseFloat(v)>=50){rawTotal=cols[i];break;}
+        }
+      }
+      
+      // Deposited amount is right after Payment Method
+      if(!rawDep && payIdx>=0){
+        const v=(cols[payIdx+1]||'').replace(/[^0-9.]/g,'');
+        if(v && parseFloat(v)>=0){rawDep=cols[payIdx+1];}
+      }
     }
-    const rawDep=(r['Deposited amount']||r['Deposited Amount']||r['Deposit']||'').trim();
     const isSGD=src==='PTSG'||rawTotal.startsWith('$');
     let totalAmt=parseFloat(rawTotal.replace(/[^0-9.]/g,''))||0;
     let depAmt=parseFloat(rawDep.replace(/[^0-9.]/g,''))||0;
