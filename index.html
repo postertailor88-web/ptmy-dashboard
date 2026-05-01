@@ -456,14 +456,28 @@ function process(rows){
     // Try all possible column names for total amount
     // Some rows may have undefined if row has fewer cols than header
     let rawTotal=(r['Total need receive']||r['Total']||r['Grand Total']||r['Amount']||'').trim();
-    // If still empty, use positional lookup - find Total column index from header
+    // If still empty, use smart positional lookup
     if(!rawTotal && r['__hdr'] && r['__cols']){
-      const totalIdx=r['__hdr'].indexOf('Total');
-      if(totalIdx>=0 && r['__cols'][totalIdx]){rawTotal=r['__cols'][totalIdx];}
-      // Also try adjacent indices in case of column shift
+      const hdr=r['__hdr'];
+      const cols=r['__cols'];
+      // Find Total between "East Malaysia Shipping Fees" and "Redo"
+      const eastIdx=hdr.findIndex(h=>h.includes('East Malaysia'));
+      const redoIdx=hdr.findIndex(h=>h.toLowerCase().includes('redo'));
+      const totalIdx=hdr.indexOf('Total');
+      
+      // Try exact position first
+      if(totalIdx>=0 && cols[totalIdx] && parseFloat(cols[totalIdx].replace(/[^0-9.]/g,''))>0){
+        rawTotal=cols[totalIdx];
+      }
+      // If row is shorter than header, Total might be at a different position
+      // Scan backwards from end of actual cols to find last numeric value
       if(!rawTotal){
-        for(let ti=totalIdx-1;ti<=totalIdx+1;ti++){
-          if(ti>=0&&r['__cols'][ti]&&parseFloat(r['__cols'][ti])>0){rawTotal=r['__cols'][ti];break;}
+        for(let i=cols.length-1;i>=Math.max(0,cols.length-6);i--){
+          const v=cols[i].replace(/[^0-9.]/g,'');
+          if(v && parseFloat(v)>0){
+            rawTotal=cols[i];
+            break;
+          }
         }
       }
     }
@@ -1122,7 +1136,7 @@ ${orders.map(o=>`<tr>
 }
 
 /* ── SGD EXCHANGE RATES ── */
-let SGD_RATES={'latest':3.45};
+let SGD_RATES={'latest':3.10};
 async function fetchSGDRates(orders){
   // Only fetch if there are SGD orders
   const hasSGD=orders.some(o=>o.isSGD);
