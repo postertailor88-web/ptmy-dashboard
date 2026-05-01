@@ -992,40 +992,25 @@ function getFilteredOrders(){
 
 function exportCSV(){
   const orders=getFilteredOrders();
-  const headers=['Date','Client Name','Client Contact','Frame','Size','Total (RM)','Deposited (RM)','Balance (RM)','Payment Method','Source','Invoice','Salesperson','SGD Converted'];
-  const rows=orders.map(o=>[
-    o.dateStr,
-    o.client,
-    o.contact,
-    o.frame,
-    o.size,
-    o.total,
-    o.dep||'',
-    o.balance||'',
-    o.pay,
-    o.src,
-    o.invoice,
-    o.sp||'',
-    o.isSGD?'Yes':'No'
-  ]);
-  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('
-');
-  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const headers=['Date','Client Name','Contact','Frame','Size','Total (RM)','Deposited','Balance','Payment','Source','Invoice','Salesperson','SGD'];
+  const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const lines=[headers.map(esc).join(',')];
+  orders.forEach(o=>{
+    lines.push([o.dateStr,o.client,o.contact,o.frame,o.size,o.total,o.dep||'',o.balance||'',o.pay,o.src,o.invoice,o.sp||'',o.isSGD?'Yes':''].map(esc).join(','));
+  });
+  const csv=lines.join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;
-  // Include filter info in filename
   const mEl=document.getElementById('ord-month');
   const yEl=document.getElementById('ord-year');
   const mLabel=mEl.options[mEl.selectedIndex].text;
   const yLabel=yEl.options[yEl.selectedIndex].text;
-  const period=mLabel==='All'&&yLabel==='All'?'All':mLabel+'-'+yLabel;
-  const srcLabel=os==='all'?'All':os;
-  a.download=`PTMY_Orders_${period}_${srcLabel}_${orders.length}orders.csv`;
+  a.download='PTMY_Orders_'+mLabel+'-'+yLabel+'_'+orders.length+'orders.csv';
   a.click();
   URL.revokeObjectURL(url);
 }
-
 function exportExcel(){
   const orders=getFilteredOrders();
   // Build HTML table that Excel can open
