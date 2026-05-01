@@ -1053,26 +1053,29 @@ function renderOrders(){
   const depCount=orders.filter(o=>o.pay==='Deposit').length;
   const sumEl=document.getElementById('o-summary');
   if(sumEl){
-    sumEl.innerHTML=`<div style="display:flex;align-items:center;flex-wrap:wrap;gap:16px;padding:12px 18px;background:var(--surface2);border-top:2px solid var(--border2);border-radius:0 0 var(--r) var(--r)">
-      <span style="font-size:11px;font-weight:600;color:var(--text2)">
-        ${orders.length} orders &nbsp;·&nbsp;
-        <span style="color:var(--green)">${paidCount} paid</span> &nbsp;·&nbsp;
-        <span style="color:var(--amber)">${depCount} deposit</span>
-      </span>
-      <span style="margin-left:auto;display:flex;gap:20px;flex-wrap:wrap">
-        <span style="display:flex;flex-direction:column;align-items:flex-end">
-          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Total Revenue</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--blue2)">${rm(totalRev)}</span>
-        </span>
-        <span style="display:flex;flex-direction:column;align-items:flex-end">
-          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Deposited</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--green)">${rm(totalDep)}</span>
-        </span>
-        <span style="display:flex;flex-direction:column;align-items:flex-end">
-          <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Balance Due</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--red)">${rm(totalBal)}</span>
-        </span>
-      </span>
+    // Use same grid as table: Date|OrderID|Client|Frame|Total|Deposited|Balance|Payment|Source|Invoice
+    // Columns: 130px 90px 1fr 120px 120px 120px 120px 90px 80px 80px (approximate)
+    sumEl.innerHTML=`<div style="background:var(--surface2);border-top:2px solid var(--border2);border-radius:0 0 var(--r) var(--r);padding:10px 0">
+      <div style="display:grid;grid-template-columns:130px 90px 1fr 120px 120px 120px 120px 90px 80px 80px;align-items:center;padding:0 12px">
+        <div style="grid-column:1/5;padding:4px 2px;font-size:11px;font-weight:600;color:var(--text2)">
+          ${orders.length} orders &nbsp;·&nbsp;
+          <span style="color:var(--green)">${paidCount} paid</span> &nbsp;·&nbsp;
+          <span style="color:var(--amber)">${depCount} deposit</span>
+        </div>
+        <div style="padding:4px 2px">
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Revenue</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--blue2)">${rm(totalRev)}</div>
+        </div>
+        <div style="padding:4px 2px">
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Deposited</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--green)">${rm(totalDep)}</div>
+        </div>
+        <div style="padding:4px 2px">
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Balance</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--red)">${rm(totalBal)}</div>
+        </div>
+        <div style="grid-column:8/11"></div>
+      </div>
     </div>`;
   }
 }
