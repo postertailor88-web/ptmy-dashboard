@@ -346,7 +346,14 @@ tbody td{padding:8px 12px;white-space:nowrap}
     <button class="chip" data-os="PTSG" onclick="setOS('PTSG')">PTSG 🇸🇬</button>
   </div>
   <div class="tcard">
-    <div class="thead-bar"><span class="thead-title">Orders</span><span class="thead-count" id="o-count">—</span></div>
+    <div class="thead-bar">
+      <span class="thead-title">Orders</span>
+      <span class="thead-count" id="o-count">—</span>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button onclick="exportCSV()" style="background:rgba(52,199,123,.12);border:1px solid rgba(52,199,123,.3);color:#34c77b;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export CSV</button>
+        <button onclick="exportExcel()" style="background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:#7ba7f5;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export Excel</button>
+      </div>
+    </div>
     <div class="twrap"><table><thead><tr><th>Date</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody><tfoot id="o-tfoot"></tfoot></table></div>
   </div>
 </div>
@@ -971,6 +978,132 @@ function renderOrders(){
       <td style="padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red)">${rm(totalBal)}</td>
       <td colspan="3"></td>
     </tr>`;
+}
+
+/* ── EXPORT ── */
+function getFilteredOrders(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  let orders=filterByDropdown(ALL,'ord-month','ord-year');
+  if(q)orders=orders.filter(o=>o.client.toLowerCase().includes(q));
+  if(pp!=='all')orders=orders.filter(o=>o.pay===pp);
+  if(os!=='all')orders=orders.filter(o=>o.src===os);
+  return orders.sort((a,b)=>b.date-a.date);
+}
+
+function exportCSV(){
+  const orders=getFilteredOrders();
+  const headers=['Date','Client Name','Client Contact','Frame','Size','Total (RM)','Deposited (RM)','Balance (RM)','Payment Method','Source','Invoice','Salesperson','SGD Converted'];
+  const rows=orders.map(o=>[
+    o.dateStr,
+    o.client,
+    o.contact,
+    o.frame,
+    o.size,
+    o.total,
+    o.dep||'',
+    o.balance||'',
+    o.pay,
+    o.src,
+    o.invoice,
+    o.sp||'',
+    o.isSGD?'Yes':'No'
+  ]);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('
+');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  // Include filter info in filename
+  const mEl=document.getElementById('ord-month');
+  const yEl=document.getElementById('ord-year');
+  const mLabel=mEl.options[mEl.selectedIndex].text;
+  const yLabel=yEl.options[yEl.selectedIndex].text;
+  const period=mLabel==='All'&&yLabel==='All'?'All':mLabel+'-'+yLabel;
+  const srcLabel=os==='all'?'All':os;
+  a.download=`PTMY_Orders_${period}_${srcLabel}_${orders.length}orders.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportExcel(){
+  const orders=getFilteredOrders();
+  // Build HTML table that Excel can open
+  const headers=['Date','Client Name','Client Contact','Frame','Size','Total (RM)','Deposited (RM)','Balance (RM)','Payment Method','Source','Invoice','Salesperson','SGD Converted'];
+  
+  const totalRev=orders.reduce((s,o)=>s+o.total,0);
+  const totalDep=orders.reduce((s,o)=>s+o.dep,0);
+  const totalBal=orders.reduce((s,o)=>s+o.balance,0);
+  const paidCount=orders.filter(o=>o.pay==='FullyPaid').length;
+  const depCount=orders.filter(o=>o.pay==='Deposit').length;
+
+  const mEl=document.getElementById('ord-month');
+  const yEl=document.getElementById('ord-year');
+  const mLabel=mEl.options[mEl.selectedIndex].text;
+  const yLabel=yEl.options[yEl.selectedIndex].text;
+  const period=mLabel+' '+yLabel;
+
+  let html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="UTF-8">
+<style>
+  body{font-family:Calibri,Arial,sans-serif;font-size:11pt}
+  .title{font-size:14pt;font-weight:bold;color:#1a3c6e}
+  .subtitle{font-size:10pt;color:#666}
+  th{background:#1a3c6e;color:white;padding:6px 10px;text-align:left;font-size:10pt;border:1px solid #ccc}
+  td{padding:5px 10px;border:1px solid #ddd;font-size:10pt}
+  tr:nth-child(even) td{background:#f5f8ff}
+  .amt{text-align:right;color:#1a3c6e;font-weight:600}
+  .bal{text-align:right;color:#c0392b;font-weight:600}
+  .dep-cell{text-align:right;color:#27ae60}
+  .paid{background:#d5f5e3;color:#1e8449;padding:2px 8px;border-radius:3px}
+  .deposit-badge{background:#fef9e7;color:#d68910;padding:2px 8px;border-radius:3px}
+  .footer td{background:#1a3c6e;color:white;font-weight:bold;border:1px solid #0f2a52}
+  .footer .amt{color:#7dd3fc}
+  .footer .bal{color:#fca5a5}
+  .sgd{font-size:8pt;color:#27ae60}
+</style>
+</head><body>
+<p class="title">PT Malaysia — Sales Orders Export</p>
+<p class="subtitle">Period: ${period} &nbsp;|&nbsp; Source: ${os==='all'?'All':os} &nbsp;|&nbsp; Total: ${orders.length} orders &nbsp;|&nbsp; Paid: ${paidCount} &nbsp;|&nbsp; Deposit: ${depCount}</p>
+<p class="subtitle">Exported: ${new Date().toLocaleString('en-MY')}</p>
+<br>
+<table>
+<thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+<tbody>
+${orders.map(o=>`<tr>
+  <td>${o.dateStr}</td>
+  <td><b>${o.client}</b></td>
+  <td>${o.contact||''}</td>
+  <td>${o.frame||''}</td>
+  <td>${o.size||''}</td>
+  <td class="amt">RM ${Math.round(o.total).toLocaleString()}${o.isSGD?'<br><span class="sgd">SGD→MYR</span>':''}</td>
+  <td class="dep-cell">${o.dep?'RM '+Math.round(o.dep).toLocaleString():''}</td>
+  <td class="${o.balance?'bal':''}">${o.balance?'RM '+Math.round(o.balance).toLocaleString():''}</td>
+  <td>${o.pay==='FullyPaid'?'<span class="paid">Fully Paid</span>':'<span class="deposit-badge">Deposit</span>'}</td>
+  <td>${o.src||''}</td>
+  <td>${o.invoice||''}</td>
+  <td>${o.sp||''}</td>
+  <td>${o.isSGD?'Yes':''}</td>
+</tr>`).join('')}
+</tbody>
+<tfoot class="footer"><tr>
+  <td colspan="5"><b>TOTAL — ${orders.length} orders</b></td>
+  <td class="amt">RM ${Math.round(totalRev).toLocaleString()}</td>
+  <td class="dep-cell">RM ${Math.round(totalDep).toLocaleString()}</td>
+  <td class="bal">RM ${Math.round(totalBal).toLocaleString()}</td>
+  <td colspan="5"></td>
+</tr></tfoot>
+</table>
+</body></html>`;
+
+  const blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  const srcLabel=os==='all'?'All':os;
+  a.download=`PTMY_Orders_${mLabel}-${yLabel}_${srcLabel}_${orders.length}orders.xls`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /* ── SGD EXCHANGE RATES ── */
