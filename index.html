@@ -401,6 +401,9 @@ function parseCSV(txt){
       if(!first)continue;
       const r={};
       hdr.forEach((h,j)=>r[h]=(c[j]||'').replace(/^"|"$/g,'').trim());
+      // Store raw cols array so we can do positional lookup if named lookup fails
+      r['__cols']=c.map(v=>(v||'').replace(/^"|"$/g,'').trim());
+      r['__hdr']=hdr;
       allRows.push(r);
     }
   }
@@ -451,7 +454,19 @@ function process(rows){
     const src=(r['Source']||'').trim();
     // SGD conversion: PTSG orders or $ prefix = SGD, convert to MYR using historical rate
     // Try all possible column names for total amount
-    const rawTotal=(r['Total need receive']||r['Total']||r['Grand Total']||r['Amount']||'').trim();
+    // Some rows may have undefined if row has fewer cols than header
+    let rawTotal=(r['Total need receive']||r['Total']||r['Grand Total']||r['Amount']||'').trim();
+    // If still empty, use positional lookup - find Total column index from header
+    if(!rawTotal && r['__hdr'] && r['__cols']){
+      const totalIdx=r['__hdr'].indexOf('Total');
+      if(totalIdx>=0 && r['__cols'][totalIdx]){rawTotal=r['__cols'][totalIdx];}
+      // Also try adjacent indices in case of column shift
+      if(!rawTotal){
+        for(let ti=totalIdx-1;ti<=totalIdx+1;ti++){
+          if(ti>=0&&r['__cols'][ti]&&parseFloat(r['__cols'][ti])>0){rawTotal=r['__cols'][ti];break;}
+        }
+      }
+    }
     const rawDep=(r['Deposited amount']||r['Deposited Amount']||r['Deposit']||'').trim();
     const isSGD=src==='PTSG'||rawTotal.startsWith('$');
     let totalAmt=parseFloat(rawTotal.replace(/[^0-9.]/g,''))||0;
