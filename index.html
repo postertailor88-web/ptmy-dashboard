@@ -267,9 +267,9 @@ tbody td{padding:8px 12px;white-space:nowrap}
       </div>
       <div id="race-ord"></div>
     </div>
-    <div style="display:none"><div class="row2b">
-      <div class="card"><div class="card-title"></div><div class="cw" style="height:1px"><canvas id="cSpRev"></canvas></div></div>
-      <div class="card"><div class="card-title"></div><div class="cw" style="height:1px"><canvas id="cSpOrd"></canvas></div></div>
+    <div style="display:none">
+      <canvas id="cSpRev"></canvas>
+      <canvas id="cSpOrd"></canvas>
     </div>
     <div class="card" style="margin-bottom:12px">
       <div class="card-title"><span class="ctd" style="background:var(--teal)"></span>Revenue by Salesperson — Monthly Breakdown</div>
@@ -613,7 +613,7 @@ function setSrc(s){srcF=s;document.querySelectorAll('[data-src]').forEach(b=>b.c
 function setPP(p){pp=p;document.querySelectorAll('[data-pp]').forEach(b=>b.classList.toggle('a-teal',b.dataset.pp===p));renderOrders()}
 function setOS(s){os=s;document.querySelectorAll('[data-os]').forEach(b=>b.classList.toggle('a-teal',b.dataset.os===s));renderOrders()}
 function setDayMetric(m){dayMetric=m;document.querySelectorAll('[data-dm]').forEach(b=>b.classList.toggle('a-teal',b.dataset.dm===m));renderDayAnalysis()}
-function applyFilters(){renderOverview()}
+function applyFilters(){try{renderOverview();}catch(e){console.error('renderOverview:',e);}}
 
 function getOverviewData(){
   let orders=filterByDropdown(ALL,'sel-month','sel-year');
@@ -627,11 +627,16 @@ function showPage(pg){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',pages[i]===pg));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+pg).classList.add('active');
-  if(pg==='salesperson')renderSalesperson();
-  if(pg==='dayanalysis')renderDayAnalysis();
-  if(pg==='balance')renderBalance();
-  if(pg==='comparison')renderComparison();
-  if(pg==='orders')renderOrders();
+  try{
+    if(pg==='salesperson')renderSalesperson();
+    if(pg==='dayanalysis')renderDayAnalysis();
+    if(pg==='balance')renderBalance();
+    if(pg==='comparison')renderComparison();
+    if(pg==='orders')renderOrders();
+  }catch(e){
+    console.error('Error rendering page '+pg+':',e);
+    document.getElementById('page-'+pg).innerHTML='<div style="padding:2rem;color:#f06060;text-align:center"><p>Error loading this tab.</p><p style="font-size:11px;color:#555;margin-top:8px">'+e.message+'</p></div>';
+  }
 }
 
 /* ── OVERVIEW ── */
@@ -986,10 +991,16 @@ function renderSalesperson(){
         +'<div style="flex:1;height:28px;background:#0a0c14;border-radius:14px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.05)">'
           +'<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,'+bc1+','+bc2+');border-radius:14px;'
             +'box-shadow:0 0 12px '+bc2+'66,0 0 25px '+bc2+'33;'
-            +'animation:barSlide '+( 1+i*0.15)+'s cubic-bezier(.2,1,.3,1) forwards;'
-            +'position:relative;overflow:hidden">'
-            // Bright top highlight
-            +'<div style="position:absolute;top:3px;left:8px;right:4px;height:3px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.8));border-radius:2px;opacity:0.7"></div>'
+            +'animation:barSlide '+(1+i*0.15)+'s cubic-bezier(.2,1,.3,1) forwards;'
+            +'position:relative;overflow:hidden;display:flex;align-items:center;justify-content:flex-end">'
+            // Bright top highlight line
+            +'<div style="position:absolute;top:3px;left:8px;right:20px;height:3px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.9));border-radius:2px;opacity:0.8"></div>'
+            // Tip glow orb
+            +'<div style="width:26px;height:26px;border-radius:50%;background:'+bc2+';flex-shrink:0;margin-right:-13px;'
+              +'box-shadow:0 0 10px 4px '+bc2+',0 0 25px 8px '+bc2+'88,0 0 50px 14px '+bc2+'44;'
+              +'animation:tipGlow 1.5s ease-in-out infinite;animation-delay:'+(i*0.3)+'s;'
+              +'filter:brightness(1.4)">'
+            +'</div>'
           +'</div>'
         +'</div>'
         +'<div style="width:100px;text-align:right;font-size:13px;font-weight:800;color:'+bc2+';flex-shrink:0;white-space:nowrap">'+fmtVal(item.val)+'</div>'
