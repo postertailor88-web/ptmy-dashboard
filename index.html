@@ -267,15 +267,8 @@ tbody td{padding:8px 12px;white-space:nowrap}
       </div>
       <div id="race-ord"></div>
     </div>
-    <div style="display:none">
-      <canvas id="cSpRev"></canvas>
-      <canvas id="cSpOrd"></canvas>
-    </div>
-    <div class="card" style="margin-bottom:12px">
-      <div class="card-title"><span class="ctd" style="background:var(--teal)"></span>Revenue by Salesperson — Monthly Breakdown</div>
-      <div class="leg" id="legSpTrend"></div>
-      <div class="cw" style="height:220px"><canvas id="cSpTrend" role="img" aria-label="Monthly revenue grouped bar"></canvas></div>
-    </div>
+
+
 
   </div>
 </div>
@@ -865,7 +858,7 @@ function renderSalesperson(){
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     @keyframes glow{0%,100%{box-shadow:0 0 15px #c9a84c66}50%{box-shadow:0 0 30px #c9a84caa,0 0 60px #c9a84c44}}
     @keyframes sparkle{0%{opacity:0;transform:scale(0) rotate(0deg)}50%{opacity:1;transform:scale(1) rotate(180deg)}100%{opacity:0;transform:scale(0) rotate(360deg)}}
-    @keyframes barSlide{from{width:0%}to{width:var(--bar-w)}}
+    @keyframes barSlide{from{width:0%;opacity:0}to{width:100%;opacity:1}}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
     @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
     
@@ -965,18 +958,18 @@ function renderSalesperson(){
 
   // Revenue bar
   dc('cSpRev');
-  // Racing bar chart function - clean version
+  // Racing bar chart function
   function renderRace(containerId, items, fmtVal, isOrders){
     const maxVal=Math.max(...items.map(i=>i.val))||1;
     const el=document.getElementById(containerId);
     if(!el)return;
-    const rankColors=['#f5c842','#b0b8c8','#cd7f32','#555450'];
-    const rankBg=['rgba(245,200,66,0.15)','rgba(176,184,200,0.1)','rgba(205,127,50,0.1)','rgba(85,84,80,0.08)'];
-    const barGrads=[['#c47d00','#f5c842'],['#4a0080','#a855f7'],['#003040','#06b6d4'],['#4a0000','#ef4444']];
-    const delays=['0s','0.15s','0.3s','0.45s'];
+    const rankColors=['#f5c842','#b0b8c8','#cd7f32','#f97316','#555450'];
+    const rankBg=['rgba(245,200,66,0.15)','rgba(176,184,200,0.1)','rgba(205,127,50,0.1)','rgba(249,115,22,0.1)','rgba(85,84,80,0.08)'];
+    const barGrads=[['#7a4a00','#f5c842'],['#2d0060','#a855f7'],['#003040','#06b6d4'],['#4a1a00','#f97316'],['#4a0000','#ef4444']];
+    const delays=['0s','0.15s','0.3s','0.45s','0.6s'];
 
     el.innerHTML=items.map((item,i)=>{
-      const pct=Math.max(5,Math.round((item.val/maxVal)*88));
+      const pct=Math.max(4,Math.round((item.val/maxVal)*92));
       const cfg=SP_CONFIG[item.name]||{color:rankColors[i%4],photo:''};
       const [bc1,bc2]=(barGrads[i%4]||barGrads[0]);
       const photo=cfg.photo
@@ -988,19 +981,26 @@ function renderSalesperson(){
         +'<div style="width:34px;height:34px;border-radius:50%;background:'+rankBg[i%4]+';border:2px solid '+rankColors[i%4]+';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:'+rankColors[i%4]+';flex-shrink:0">'+(i+1)+'</div>'
         +'<div style="position:relative;flex-shrink:0">'+crown+photo+'</div>'
         +'<div style="width:68px;font-size:12px;font-weight:700;color:#e2e4e9;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+item.name+'</div>'
-        +'<div style="flex:1;height:28px;background:#0a0c14;border-radius:14px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.05)">'
-          +'<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,'+bc1+','+bc2+');border-radius:14px;'
-            +'animation:barSlide '+(1+i*0.15)+'s cubic-bezier(.2,1,.3,1) forwards;'
+        +'<div class="race-track-wrap" style="flex:1;height:28px;background:#0a0c14;border-radius:14px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.05);cursor:pointer" '
+          +'title="'+fmtVal(item.val)+'" '
+          +'onmouseenter="this.querySelector(\'.race-tip\').style.opacity=1" '
+          +'onmouseleave="this.querySelector(\'.race-tip\').style.opacity=0">'
+          // Animated bar - use data-w for JS animation
+          +'<div class="race-bar-el" data-w="'+pct+'%" style="height:100%;width:0%;background:linear-gradient(90deg,'+bc1+','+bc2+');border-radius:14px;'
+            +'box-shadow:0 0 8px '+bc2+'44;'
+            +'transition:width '+(1+i*0.2)+'s cubic-bezier(.2,1,.3,1);'
             +'position:relative;overflow:hidden">'
             // White core line
             +'<div style="position:absolute;top:5px;left:10px;right:10px;height:2.5px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),rgba(255,255,255,0.95));opacity:0.8"></div>'
             // Light sweep
             +'<div style="position:absolute;top:0;left:-40%;width:30%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);animation:sweep 3.5s ease-in-out infinite;animation-delay:'+(i*0.5)+'s;border-radius:inherit"></div>'
-            // Tip bright edge
-            +'<div style="position:absolute;right:0;top:0;bottom:0;width:20px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.45));border-radius:0 14px 14px 0;animation:tipGlow 1.5s ease-in-out infinite;animation-delay:'+(i*0.4)+'s"></div>'
-            // Lightning bolt
+            // Tip edge glow
+            +'<div style="position:absolute;right:0;top:0;bottom:0;width:22px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.5));border-radius:0 14px 14px 0;animation:tipGlow 1.5s ease-in-out infinite;animation-delay:'+(i*0.4)+'s"></div>'
+            // Lightning
             +'<div style="position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:11px;animation:bolt 2.5s ease-in-out infinite;animation-delay:'+(i*0.8)+'s;line-height:1">&#9889;</div>'
           +'</div>'
+          // Hover tooltip
+          +'<div class="race-tip" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,20,0.92);border:1px solid '+bc2+'66;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;color:'+bc2+';white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10">'+fmtVal(item.val)+'</div>'
         +'</div>'
         +'<div style="width:100px;text-align:right;font-size:13px;font-weight:800;color:'+bc2+';flex-shrink:0;white-space:nowrap">'+fmtVal(item.val)+'</div>'
         +'</div>';
@@ -1012,51 +1012,18 @@ function renderSalesperson(){
   const raceOrdItems=sps.map(sp=>({name:sp.name,val:Math.round(sp.orders)})).sort((a,b)=>b.val-a.val);
   renderRace('race-rev', raceRevItems, v=>'RM '+v.toLocaleString(), false);
   renderRace('race-ord', raceOrdItems, v=>v+' orders', true);
+  // Trigger bar animations after render
+  requestAnimationFrame(()=>setTimeout(()=>{
+    document.querySelectorAll('.race-bar-el').forEach((el,i)=>{
+      setTimeout(()=>{ el.style.width=el.dataset.w; }, i*120);
+    });
+  },50));
 
   // Monthly trend per salesperson
   const monthsSet=new Set();orders.filter(o=>o.sp).forEach(o=>{if(o.date)monthsSet.add(`${o.date.getFullYear()}-${String(o.date.getMonth()).padStart(2,'0')}`)});
   const mKeys=[...monthsSet].sort();
   const mLabels=mKeys.map(k=>{const[y,m]=k.split('-');return MONTHS[parseInt(m)].slice(0,3)+' '+y});
-    dc('cSpTrend');
-  CH['cSpTrend']=new Chart(document.getElementById('cSpTrend'),{type:'bar',
-    data:{
-      labels:mLabels,
-      datasets:sps.map((sp,i)=>{
-        const cfg=SP_CONFIG[sp.name]||{color:SP_COLORS[i%SP_COLORS.length]};
-        return{
-          label:sp.name,
-          data:mKeys.map(k=>{
-            const[y,m]=k.split('-');
-            let rev=0;
-            orders.filter(o=>o.date&&o.date.getFullYear()===parseInt(y)&&o.date.getMonth()===parseInt(m)).forEach(o=>{
-              splitSharedOrder(o).forEach(({sp:s,share})=>{if(s===sp.name)rev+=o.total*share});
-            });
-            return Math.round(rev);
-          }),
-          backgroundColor:cfg.color+'cc',
-          borderColor:cfg.color,
-          borderWidth:1,
-          borderRadius:4,
-          borderSkipped:false
-        };
-      })
-    },
-    options:{...TO,
-      scales:{
-        x:{ticks:{...TX},grid:{display:false}},
-        y:{ticks:{...TX,callback:v=>'RM'+Math.round(v/1000)+'k'},grid:GR}
-      },
-      plugins:{
-        legend:{display:false},
-        tooltip:{backgroundColor:'#2c3140',titleColor:'#e2e4e9',bodyColor:'#8b90a0',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,
-          callbacks:{label:c=>c.dataset.label+': RM '+c.parsed.y.toLocaleString()}}
-      }
-    }
-  });
-  document.getElementById('legSpTrend').innerHTML=sps.map((sp,i)=>{
-    const cfg=SP_CONFIG[sp.name]||{color:SP_COLORS[i%SP_COLORS.length]};
-    return '<div class="leg-i"><span class="leg-d" style="background:'+cfg.color+'"></span>'+sp.name+'</div>';
-  }).join('');
+  
 
 
 }
