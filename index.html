@@ -858,10 +858,35 @@ function renderSalesperson(){
   styleTag.textContent=`
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     @keyframes glow{0%,100%{box-shadow:0 0 15px #c9a84c66}50%{box-shadow:0 0 30px #c9a84caa,0 0 60px #c9a84c44}}
-    @keyframes sparkle{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0)}}
+    @keyframes sparkle{0%{opacity:0;transform:scale(0) rotate(0deg)}50%{opacity:1;transform:scale(1) rotate(180deg)}100%{opacity:0;transform:scale(0) rotate(360deg)}}
+    @keyframes barSlide{from{width:0%}to{width:var(--bar-w)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+    @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+    @keyframes bounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.05)}}
     .podium-1st{animation:float 3s ease-in-out infinite}
     .podium-glow{animation:glow 2s ease-in-out infinite}
     .spark{animation:sparkle 1.5s ease-in-out infinite}
+    .race-row{transition:transform .2s ease, filter .2s ease;cursor:pointer}
+    .race-row:hover{transform:translateX(4px) scale(1.01);filter:brightness(1.15)}
+    .race-bar{animation:barSlide 1.2s cubic-bezier(.4,0,.2,1) forwards}
+    .race-bar-shimmer{
+      background-size:200% auto !important;
+      animation:barSlide 1.2s cubic-bezier(.4,0,.2,1) forwards, shimmer 2.5s linear infinite !important;
+    }
+    .race-photo{transition:transform .2s ease, box-shadow .2s ease}
+    .race-row:hover .race-photo{transform:scale(1.12) rotate(-3deg)}
+    .race-val{transition:all .2s ease;opacity:0.85}
+    .race-row:hover .race-val{opacity:1;transform:scale(1.05)}
+    .rank-circle{transition:transform .2s ease}
+    .race-row:hover .rank-circle{transform:scale(1.2)}
+    .tooltip-val{
+      position:absolute;right:0;top:-34px;background:rgba(15,15,30,0.95);
+      border:1px solid rgba(255,255,255,0.15);border-radius:8px;
+      padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap;
+      pointer-events:none;opacity:0;transition:opacity .2s;z-index:100;
+      backdrop-filter:blur(8px);
+    }
+    .race-track:hover .tooltip-val{opacity:1}
   `;
   document.head.appendChild(styleTag);
 
@@ -930,54 +955,56 @@ function renderSalesperson(){
 
   // Revenue bar
   dc('cSpRev');
-  // Racing bar chart function - competition style
+  // Racing bar chart function - animated competition style
   function renderRace(containerId, items, fmtVal, isOrders){
     const maxVal=Math.max(...items.map(i=>i.val))||1;
     const el=document.getElementById(containerId);
     if(!el)return;
     const rankColors=['#f5c842','#b0b8c8','#cd7f32','#555450'];
     const rankBg=['rgba(245,200,66,0.15)','rgba(176,184,200,0.1)','rgba(205,127,50,0.1)','rgba(85,84,80,0.08)'];
-    const barColors=[
-      ['#f5c842','#ff9800'],   // gold gradient
-      ['#a78bfa','#ec4899'],   // purple-pink
-      ['#2dd4bf','#06b6d4'],   // teal-cyan
-      ['#f5a742','#ef4444'],   // amber-red
+    const barGrads=[
+      ['#f5c842','#ff9800'],
+      ['#7c3aed','#ec4899'],
+      ['#06b6d4','#2dd4bf'],
+      ['#f97316','#ef4444'],
     ];
+    const animDelays=['0s','0.2s','0.4s','0.6s'];
 
     el.innerHTML = items.map((item,i)=>{
-      const pct = Math.max(8, Math.round((item.val/maxVal)*88));
+      const pct = Math.max(5, Math.round((item.val/maxVal)*88));
       const cfg = SP_CONFIG[item.name]||{color:SP_COLORS[i%SP_COLORS.length],photo:''};
+      const [bc1,bc2]=(barGrads[i%4]||barGrads[0]);
       const photo = cfg.photo
-        ? '<img src="'+cfg.photo+'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2.5px solid '+rankColors[i%4]+';box-shadow:0 0 10px '+rankColors[i%4]+'66">'
-        : '<div style="width:46px;height:46px;border-radius:50%;background:'+rankColors[i%4]+'33;border:2px solid '+rankColors[i%4]+';display:flex;align-items:center;justify-content:center;font-size:20px;color:'+rankColors[i%4]+'">?</div>';
-      const crown = i===0?'<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:14px">👑</div>':'';
-      const bc1 = (barColors[i%4]||barColors[0])[0];
-      const bc2 = (barColors[i%4]||barColors[0])[1];
-      // Arrow tip for orders
-      const arrowTip = isOrders
-        ? '<span style="margin-left:-2px;color:'+bc2+';font-size:10px;letter-spacing:-3px;opacity:0.8">>>>></span>'
-        : '';
-      return (
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:0 4px">'
-          // Rank circle
-          +'<div style="width:32px;height:32px;border-radius:50%;background:'+rankBg[i%4]+';border:2px solid '+rankColors[i%4]+';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:'+rankColors[i%4]+';flex-shrink:0">'+(i+1)+'</div>'
-          // Photo with crown
-          +'<div style="position:relative;flex-shrink:0">'+crown+photo+'</div>'
-          // Name
-          +'<div style="width:62px;font-size:12px;font-weight:600;color:#e2e4e9;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+item.name+'</div>'
-          // Bar track
-          +'<div style="flex:1;height:20px;background:rgba(255,255,255,0.05);border-radius:10px;overflow:visible;position:relative">'
-            +'<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,'+bc1+','+bc2+');border-radius:10px;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;position:relative;min-width:20px">'
-              +arrowTip
-            +'</div>'
+        ? '<img class="race-photo" src="'+cfg.photo+'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2.5px solid '+rankColors[i%4]+';box-shadow:0 0 12px '+rankColors[i%4]+'55;flex-shrink:0">'
+        : '<div class="race-photo" style="width:52px;height:52px;border-radius:50%;background:'+rankColors[i%4]+'22;border:2.5px solid '+rankColors[i%4]+';display:flex;align-items:center;justify-content:center;font-size:22px;color:'+rankColors[i%4]+';flex-shrink:0">?</div>';
+      const crown = i===0 ? '<div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:16px;animation:bounce 1.5s ease-in-out infinite">👑</div>' : '';
+      
+      // Staggered glow dots on bar for rank 1
+      const glowDots = i===0 ? '<div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:3px">'
+        +['','',''].map((_,d)=>'<div style="width:5px;height:5px;border-radius:50%;background:white;opacity:0.6;animation:pulse 1s ease-in-out infinite;animation-delay:'+(d*0.2)+'s"></div>').join('')
+        +'</div>' : '';
+
+      return '<div class="race-row" style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:0 4px;position:relative">'
+        // Rank circle
+        +'<div class="rank-circle" style="width:34px;height:34px;border-radius:50%;background:'+rankBg[i%4]+';border:2px solid '+rankColors[i%4]+';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:'+rankColors[i%4]+';flex-shrink:0">'+(i+1)+'</div>'
+        // Photo with crown
+        +'<div style="position:relative;flex-shrink:0">'+crown+photo+'</div>'
+        // Name
+        +'<div style="width:68px;font-size:12px;font-weight:700;color:#e2e4e9;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+item.name+'</div>'
+        // Bar track with tooltip
+        +'<div class="race-track" style="flex:1;height:22px;background:rgba(255,255,255,0.05);border-radius:11px;overflow:visible;position:relative">'
+          // Animated bar
+          +'<div class="race-bar-shimmer" style="height:100%;border-radius:11px;--bar-w:'+pct+'%;width:0%;background:linear-gradient(90deg,'+bc1+','+bc2+');position:relative;animation-delay:'+animDelays[i%4]+'">'
+            +glowDots
           +'</div>'
-          // Value
-          +'<div style="width:90px;text-align:right;font-size:12px;font-weight:700;color:'+bc2+';flex-shrink:0;white-space:nowrap">'+fmtVal(item.val)+'</div>'
+          // Tooltip on hover
+          +'<div class="tooltip-val" style="color:'+bc2+'">'+fmtVal(item.val)+'</div>'
         +'</div>'
-      );
+        // Value
+        +'<div class="race-val" style="width:100px;text-align:right;font-size:13px;font-weight:800;color:'+bc2+';flex-shrink:0;white-space:nowrap">'+fmtVal(item.val)+'</div>'
+        +'</div>';
     }).join('');
   }
-
 
   // Render racing charts
   const raceRevItems=sps.map(sp=>({name:sp.name,val:Math.round(sp.rev)})).sort((a,b)=>b.val-a.val);
