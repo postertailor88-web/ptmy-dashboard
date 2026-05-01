@@ -246,9 +246,17 @@ tbody td{padding:8px 12px;white-space:nowrap}
   <div id="sp-content">
     <div id="sp-podium" style="margin-bottom:4px"></div>
     <div class="sp-grid" id="sp-cards"></div>
-    <div class="row2b">
-      <div class="card"><div class="card-title"><span class="ctd" style="background:var(--blue)"></span>Revenue by Salesperson</div><div class="cw" style="height:200px"><canvas id="cSpRev"></canvas></div></div>
-      <div class="card"><div class="card-title"><span class="ctd" style="background:var(--purple)"></span>Orders by Salesperson</div><div class="cw" style="height:200px"><canvas id="cSpOrd"></canvas></div></div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title"><span class="ctd" style="background:var(--blue)"></span>🏁 Sales Race — Revenue</div>
+      <div id="race-rev" style="padding:4px 0"></div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title"><span class="ctd" style="background:var(--purple)"></span>🏁 Sales Race — Orders</div>
+      <div id="race-ord" style="padding:4px 0"></div>
+    </div>
+    <div style="display:none"><div class="row2b">
+      <div class="card"><div class="card-title"></div><div class="cw" style="height:1px"><canvas id="cSpRev"></canvas></div></div>
+      <div class="card"><div class="card-title"></div><div class="cw" style="height:1px"><canvas id="cSpOrd"></canvas></div></div>
     </div>
     <div class="card" style="margin-bottom:12px">
       <div class="card-title"><span class="ctd" style="background:var(--teal)"></span>Revenue by Salesperson — Monthly Breakdown</div>
@@ -866,18 +874,43 @@ function renderSalesperson(){
 
   // Revenue bar
   dc('cSpRev');
-  const spColors=sps.map(sp=>(SP_CONFIG[sp.name]||{color:SP_COLORS[0]}).color);
-  CH['cSpRev']=new Chart(document.getElementById('cSpRev'),{type:'bar',
-    data:{labels:sps.map(s=>s.name),datasets:[{data:sps.map(s=>Math.round(s.rev)),backgroundColor:spColors.map(c=>c+'bb'),borderRadius:4,borderSkipped:false}]},
-    options:{...TO,indexAxis:'y',scales:{x:{ticks:{...TX,callback:v=>'RM'+Math.round(v/1000)+'k'},grid:GR},y:{ticks:{...TX},grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'RM '+c.parsed.x.toLocaleString()},backgroundColor:'#2c3140',titleColor:'#e2e4e9',bodyColor:'#8b90a0',borderColor:'rgba(255,255,255,0.08)',borderWidth:1}}}
-  });
+  // Racing bar chart function
+  function renderRace(containerId, items, fmtVal, fmtLabel){
+    const maxVal=Math.max(...items.map(i=>i.val))||1;
+    const el=document.getElementById(containerId);
+    if(!el)return;
+    el.innerHTML=items.map((item,i)=>{
+      const pct=Math.round((item.val/maxVal)*100);
+      const cfg=SP_CONFIG[item.name]||{color:SP_COLORS[i%SP_COLORS.length],photo:''};
+      const photo=cfg.photo
+        ?'<img src="'+cfg.photo+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2.5px solid '+cfg.color+';flex-shrink:0;box-shadow:0 2px 8px '+cfg.color+'55">'
+        :'<div style="width:42px;height:42px;border-radius:50%;background:'+cfg.color+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+cfg.icon+'</div>';
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:0 8px">'
+        // Name label
+        +'<div style="width:70px;text-align:right;font-size:11px;font-weight:600;color:var(--text2);flex-shrink:0">'+item.name+'</div>'
+        // Race track
+        +'<div style="flex:1;position:relative;height:46px;background:var(--surface3);border-radius:23px;overflow:visible">'
+        // Bar fill with animation
+        +'<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:linear-gradient(90deg,'+cfg.color+'44,'+cfg.color+'88);border-radius:23px;transition:width 1s ease;min-width:50px"></div>'
+        // Track lines
+        +'<div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 9.09%,rgba(255,255,255,0.03) 9.09%,rgba(255,255,255,0.03) 9.1%);border-radius:23px"></div>'
+        // Value label inside bar
+        +'<div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:monospace;font-size:12px;font-weight:700;color:'+cfg.color+';white-space:nowrap">'+fmtVal(item.val)+'</div>'
+        // Character photo at end of bar
+        +'<div style="position:absolute;right:-21px;top:50%;transform:translateY(-50%);z-index:10">'+photo+'</div>'
+        +'</div>'
+        // Medal
+        +'<div style="width:28px;text-align:center;font-size:18px;flex-shrink:0">'+medal+'</div>'
+        +'</div>';
+    }).join('');
+  }
 
-  // Orders bar
-  dc('cSpOrd');
-  CH['cSpOrd']=new Chart(document.getElementById('cSpOrd'),{type:'bar',
-    data:{labels:sps.map(s=>s.name),datasets:[{data:sps.map(s=>Math.round(s.orders)),backgroundColor:spColors.map(c=>c+'bb'),borderRadius:4,borderSkipped:false}]},
-    options:{...TO,indexAxis:'y',scales:{x:{ticks:{...TX,stepSize:1},grid:GR},y:{ticks:{...TX},grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+' orders'},backgroundColor:'#2c3140',titleColor:'#e2e4e9',bodyColor:'#8b90a0',borderColor:'rgba(255,255,255,0.08)',borderWidth:1}}}
-  });
+  // Render racing charts
+  const raceRevItems=sps.map(sp=>({name:sp.name,val:Math.round(sp.rev)})).sort((a,b)=>b.val-a.val);
+  const raceOrdItems=sps.map(sp=>({name:sp.name,val:Math.round(sp.orders)})).sort((a,b)=>b.val-a.val);
+  renderRace('race-rev', raceRevItems, v=>'RM '+v.toLocaleString(), v=>v);
+  renderRace('race-ord', raceOrdItems, v=>v+' orders', v=>v);
 
   // Monthly trend per salesperson
   const monthsSet=new Set();orders.filter(o=>o.sp).forEach(o=>{if(o.date)monthsSet.add(`${o.date.getFullYear()}-${String(o.date.getMonth()).padStart(2,'0')}`)});
