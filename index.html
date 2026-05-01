@@ -344,6 +344,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
     <button class="chip" data-os="FS2" onclick="setOS('FS2')">FS2</button>
     <button class="chip" data-os="Dealer" onclick="setOS('Dealer')">Dealer</button>
     <button class="chip" data-os="PTSG" onclick="setOS('PTSG')">PTSG 🇸🇬</button>
+    <button class="chip" data-os="Shopee" onclick="setOS('Shopee')">Shopee</button>
   </div>
   <div class="tcard">
     <div class="thead-bar">
@@ -943,6 +944,7 @@ function renderOrders(){
     if(s==='FS2')return`<span class="badge b-fs2">FS2</span>`;
     if(s==='Dealer')return`<span class="badge b-dealer">Dealer</span>`;
     if(s==='PTSG')return`<span class="badge" style="background:rgba(52,199,123,.12);color:var(--green)">PTSG 🇸🇬</span>`;
+    if(s==='Shopee')return`<span class="badge" style="background:rgba(255,80,0,.12);color:#ff5000">Shopee 🛍</span>`;
     return`<span class="badge b-other">${s||'—'}</span>`;
   };
 
