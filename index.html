@@ -1053,30 +1053,42 @@ function renderOrders(){
   const depCount=orders.filter(o=>o.pay==='Deposit').length;
   const sumEl=document.getElementById('o-summary');
   if(sumEl){
-    // Use same grid as table: Date|OrderID|Client|Frame|Total|Deposited|Balance|Payment|Source|Invoice
-    // Columns: 130px 90px 1fr 120px 120px 120px 120px 90px 80px 80px (approximate)
-    sumEl.innerHTML=`<div style="background:var(--surface2);border-top:2px solid var(--border2);border-radius:0 0 var(--r) var(--r);padding:10px 0">
-      <div style="display:grid;grid-template-columns:130px 90px 1fr 120px 120px 120px 120px 90px 80px 80px;align-items:center;padding:0 12px">
-        <div style="grid-column:1/5;padding:4px 2px;font-size:11px;font-weight:600;color:var(--text2)">
-          ${orders.length} orders &nbsp;·&nbsp;
-          <span style="color:var(--green)">${paidCount} paid</span> &nbsp;·&nbsp;
-          <span style="color:var(--amber)">${depCount} deposit</span>
-        </div>
-        <div style="padding:4px 2px">
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Revenue</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--blue2)">${rm(totalRev)}</div>
-        </div>
-        <div style="padding:4px 2px">
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Deposited</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--green)">${rm(totalDep)}</div>
-        </div>
-        <div style="padding:4px 2px">
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Balance</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--red)">${rm(totalBal)}</div>
-        </div>
-        <div style="grid-column:8/11"></div>
+    // Render summary first, then position cells by reading actual header cell positions
+    sumEl.innerHTML=`<div style="background:var(--surface2);border-top:2px solid var(--border2);border-radius:0 0 var(--r) var(--r);padding:10px 0;position:relative;min-height:48px">
+      <div id="sum-label" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap">
+        ${orders.length} orders &nbsp;·&nbsp;
+        <span style="color:var(--green)">${paidCount} paid</span> &nbsp;·&nbsp;
+        <span style="color:var(--amber)">${depCount} deposit</span>
       </div>
+      <div id="sum-rev"  style="position:absolute;top:6px"></div>
+      <div id="sum-dep"  style="position:absolute;top:6px"></div>
+      <div id="sum-bal"  style="position:absolute;top:6px"></div>
     </div>`;
+
+    // After DOM renders, position each cell under the correct header
+    requestAnimationFrame(()=>{
+      const tbl=document.querySelector('#o-tbody').closest('table');
+      if(!tbl)return;
+      const ths=tbl.querySelectorAll('thead th');
+      const wrap=sumEl.getBoundingClientRect();
+      // th indices: 0=Date,1=OrderID,2=Client,3=Frame,4=Total,5=Deposited,6=Balance
+      const pos=(i)=>{
+        const r=ths[i].getBoundingClientRect();
+        return{left:r.left-wrap.left, width:r.width};
+      };
+      const mkCell=(elId,label,val,color)=>{
+        const el=document.getElementById(elId);
+        if(!el)return;
+        const p=pos(parseInt(elId==='sum-rev'?4:elId==='sum-dep'?5:6));
+        el.style.left=p.left+'px';
+        el.style.width=p.width+'px';
+        el.innerHTML='<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:0 12px">'+label+'</div>'
+          +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;color:'+color+';padding:2px 12px">'+val+'</div>';
+      };
+      mkCell('sum-rev','Revenue',rm(totalRev),'var(--blue2)');
+      mkCell('sum-dep','Deposited',rm(totalDep),'var(--green)');
+      mkCell('sum-bal','Balance',rm(totalBal),'var(--red)');
+    });
   }
 }
 
