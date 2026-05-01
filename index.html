@@ -246,13 +246,25 @@ tbody td{padding:8px 12px;white-space:nowrap}
   <div id="sp-content">
     <div id="sp-podium" style="margin-bottom:4px"></div>
     <div class="sp-grid" id="sp-cards"></div>
-    <div class="card" style="margin-bottom:12px">
-      <div class="card-title"><span class="ctd" style="background:var(--blue)"></span>🏁 Sales Race — Revenue</div>
-      <div id="race-rev" style="padding:4px 0"></div>
+    <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);border-radius:var(--r);padding:18px 20px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div style="width:32px;height:32px;background:rgba(245,200,66,0.15);border:1px solid rgba(245,200,66,0.4);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px">💰</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#e2e4e9;letter-spacing:.3px">REVENUE COMPETITION</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">Total Revenue (RM)</div>
+        </div>
+      </div>
+      <div id="race-rev"></div>
     </div>
-    <div class="card" style="margin-bottom:12px">
-      <div class="card-title"><span class="ctd" style="background:var(--purple)"></span>🏁 Sales Race — Orders</div>
-      <div id="race-ord" style="padding:4px 0"></div>
+    <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);border-radius:var(--r);padding:18px 20px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div style="width:32px;height:32px;background:rgba(91,141,238,0.15);border:1px solid rgba(91,141,238,0.4);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px">📋</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#e2e4e9;letter-spacing:.3px">ORDERS COMPETITION</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">Total Orders</div>
+        </div>
+      </div>
+      <div id="race-ord"></div>
     </div>
     <div style="display:none"><div class="row2b">
       <div class="card"><div class="card-title"></div><div class="cw" style="height:1px"><canvas id="cSpRev"></canvas></div></div>
@@ -874,43 +886,60 @@ function renderSalesperson(){
 
   // Revenue bar
   dc('cSpRev');
-  // Racing bar chart function
-  function renderRace(containerId, items, fmtVal, fmtLabel){
+  // Racing bar chart function - competition style
+  function renderRace(containerId, items, fmtVal, isOrders){
     const maxVal=Math.max(...items.map(i=>i.val))||1;
     const el=document.getElementById(containerId);
     if(!el)return;
-    el.innerHTML=items.map((item,i)=>{
-      const pct=Math.round((item.val/maxVal)*100);
-      const cfg=SP_CONFIG[item.name]||{color:SP_COLORS[i%SP_COLORS.length],photo:''};
-      const photo=cfg.photo
-        ?'<img src="'+cfg.photo+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2.5px solid '+cfg.color+';flex-shrink:0;box-shadow:0 2px 8px '+cfg.color+'55">'
-        :'<div style="width:42px;height:42px;border-radius:50%;background:'+cfg.color+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+cfg.icon+'</div>';
-      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:0 8px">'
-        // Name label
-        +'<div style="width:70px;text-align:right;font-size:11px;font-weight:600;color:var(--text2);flex-shrink:0">'+item.name+'</div>'
-        // Race track
-        +'<div style="flex:1;position:relative;height:46px;background:var(--surface3);border-radius:23px;overflow:visible">'
-        // Bar fill with animation
-        +'<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:linear-gradient(90deg,'+cfg.color+'44,'+cfg.color+'88);border-radius:23px;transition:width 1s ease;min-width:50px"></div>'
-        // Track lines
-        +'<div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 9.09%,rgba(255,255,255,0.03) 9.09%,rgba(255,255,255,0.03) 9.1%);border-radius:23px"></div>'
-        // Value label inside bar
-        +'<div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:monospace;font-size:12px;font-weight:700;color:'+cfg.color+';white-space:nowrap">'+fmtVal(item.val)+'</div>'
-        // Character photo at end of bar
-        +'<div style="position:absolute;right:-21px;top:50%;transform:translateY(-50%);z-index:10">'+photo+'</div>'
+    const rankColors=['#f5c842','#b0b8c8','#cd7f32','#555450'];
+    const rankBg=['rgba(245,200,66,0.15)','rgba(176,184,200,0.1)','rgba(205,127,50,0.1)','rgba(85,84,80,0.08)'];
+    const barColors=[
+      ['#f5c842','#ff9800'],   // gold gradient
+      ['#a78bfa','#ec4899'],   // purple-pink
+      ['#2dd4bf','#06b6d4'],   // teal-cyan
+      ['#f5a742','#ef4444'],   // amber-red
+    ];
+
+    el.innerHTML = items.map((item,i)=>{
+      const pct = Math.max(8, Math.round((item.val/maxVal)*88));
+      const cfg = SP_CONFIG[item.name]||{color:SP_COLORS[i%SP_COLORS.length],photo:''};
+      const photo = cfg.photo
+        ? '<img src="'+cfg.photo+'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2.5px solid '+rankColors[i%4]+';box-shadow:0 0 10px '+rankColors[i%4]+'66">'
+        : '<div style="width:46px;height:46px;border-radius:50%;background:'+rankColors[i%4]+'33;border:2px solid '+rankColors[i%4]+';display:flex;align-items:center;justify-content:center;font-size:20px;color:'+rankColors[i%4]+'">?</div>';
+      const crown = i===0?'<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:14px">👑</div>':'';
+      const bc1 = (barColors[i%4]||barColors[0])[0];
+      const bc2 = (barColors[i%4]||barColors[0])[1];
+      // Arrow tip for orders
+      const arrowTip = isOrders
+        ? '<span style="margin-left:-2px;color:'+bc2+';font-size:10px;letter-spacing:-3px;opacity:0.8">>>>></span>'
+        : '';
+      return (
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:0 4px">'
+          // Rank circle
+          +'<div style="width:32px;height:32px;border-radius:50%;background:'+rankBg[i%4]+';border:2px solid '+rankColors[i%4]+';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:'+rankColors[i%4]+';flex-shrink:0">'+(i+1)+'</div>'
+          // Photo with crown
+          +'<div style="position:relative;flex-shrink:0">'+crown+photo+'</div>'
+          // Name
+          +'<div style="width:62px;font-size:12px;font-weight:600;color:#e2e4e9;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+item.name+'</div>'
+          // Bar track
+          +'<div style="flex:1;height:20px;background:rgba(255,255,255,0.05);border-radius:10px;overflow:visible;position:relative">'
+            +'<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,'+bc1+','+bc2+');border-radius:10px;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;position:relative;min-width:20px">'
+              +arrowTip
+            +'</div>'
+          +'</div>'
+          // Value
+          +'<div style="width:90px;text-align:right;font-size:12px;font-weight:700;color:'+bc2+';flex-shrink:0;white-space:nowrap">'+fmtVal(item.val)+'</div>'
         +'</div>'
-        // Medal
-        +'<div style="width:28px;text-align:center;font-size:18px;flex-shrink:0">'+medal+'</div>'
-        +'</div>';
+      );
     }).join('');
   }
+
 
   // Render racing charts
   const raceRevItems=sps.map(sp=>({name:sp.name,val:Math.round(sp.rev)})).sort((a,b)=>b.val-a.val);
   const raceOrdItems=sps.map(sp=>({name:sp.name,val:Math.round(sp.orders)})).sort((a,b)=>b.val-a.val);
-  renderRace('race-rev', raceRevItems, v=>'RM '+v.toLocaleString(), v=>v);
-  renderRace('race-ord', raceOrdItems, v=>v+' orders', v=>v);
+  renderRace('race-rev', raceRevItems, v=>'RM '+v.toLocaleString(), false);
+  renderRace('race-ord', raceOrdItems, v=>v+' orders', true);
 
   // Monthly trend per salesperson
   const monthsSet=new Set();orders.filter(o=>o.sp).forEach(o=>{if(o.date)monthsSet.add(`${o.date.getFullYear()}-${String(o.date.getMonth()).padStart(2,'0')}`)});
