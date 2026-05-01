@@ -450,8 +450,9 @@ function process(rows){
     const dateStr=rawDate||r['Date']||'';
     const src=(r['Source']||'').trim();
     // SGD conversion: PTSG orders or $ prefix = SGD, convert to MYR using historical rate
-    const rawTotal=(r['Total need receive']||r['Total']||'').trim();
-    const rawDep=(r['Deposited amount']||r['Deposited Amount']||'').trim();
+    // Try all possible column names for total amount
+    const rawTotal=(r['Total need receive']||r['Total']||r['Grand Total']||r['Amount']||'').trim();
+    const rawDep=(r['Deposited amount']||r['Deposited Amount']||r['Deposit']||'').trim();
     const isSGD=src==='PTSG'||rawTotal.startsWith('$');
     let totalAmt=parseFloat(rawTotal.replace(/[^0-9.]/g,''))||0;
     let depAmt=parseFloat(rawDep.replace(/[^0-9.]/g,''))||0;
@@ -1159,11 +1160,15 @@ async function loadData(){
       return ts.includes('16/03/2026');
     });
     console.log('Mar 16/03/2026 raw rows:',mar16.length);
-    mar16.forEach(r=>console.log('  Mar16 row:',r['Client Name'],
-      '| Total:',r['Total']||r['Total need receive'],
-      '| Pay:',r['Payment Method'],
-      '| Source:',r['Source']
-    ));
+    mar16.forEach(r=>{
+      const total=r['Total need receive']||r['Total']||r['Grand Total']||'UNDEFINED';
+      console.log('  Mar16 row:',r['Client Name'],
+        '| Total:',total,
+        '| Pay:',r['Payment Method'],
+        '| Source:',r['Source'],
+        '| Keys:',Object.keys(r).join(',')
+      );
+    });
     const mar16valid=ALL.filter(o=>o.date&&o.date.getMonth()===2&&o.date.getDate()===16&&o.date.getFullYear()===2026);
     console.log('Mar 16 VALID orders after filter:',mar16valid.length);
     
