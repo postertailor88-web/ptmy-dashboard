@@ -684,8 +684,8 @@ function getOverviewData(){
 
 /* ── Page nav ── */
 function showPage(pg){
-  const pages=['overview','salesperson','dayanalysis','balance','comparison','orders'];
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',pages[i]===pg));
+  // Use data-page attribute - works correctly even after drag reorder
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===pg));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+pg).classList.add('active');
   try{
