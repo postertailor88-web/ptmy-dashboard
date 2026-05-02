@@ -315,45 +315,46 @@ tbody td{padding:8px 12px;white-space:nowrap}
 
 <!-- ═══ BALANCE ═══ -->
 <div class="page" id="page-balance"><div class="main">
-  <!-- Filter bar row 1 -->
-  <div class="toolbar" style="margin-bottom:8px">
-    <div class="search-wrap" style="min-width:180px">
-      <span class="si">🔍</span>
-      <input class="search-input" id="bal-q" placeholder="Search client / order ID…" oninput="renderBalance()">
+  <!-- Filter bars using grid for perfect alignment -->
+  <div style="display:grid;grid-template-columns:auto auto auto 1fr;gap:0;margin-bottom:12px">
+    <!-- Row 1 -->
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 12px 4px">
+      <div class="search-wrap" style="min-width:180px">
+        <span class="si">🔍</span>
+        <input class="search-input" id="bal-q" placeholder="Search client / order ID…" oninput="renderBalance()">
+      </div>
+      <div class="sep"></div>
+      <span class="tlabel">Salesperson</span>
+      <select id="bal-sp-filter" class="sel" onchange="renderBalance()" style="min-width:120px">
+        <option value="all">All</option>
+      </select>
+      <div class="sep"></div>
+      <span class="tlabel">Sort</span>
+      <select id="bal-sort" class="sel" onchange="renderBalance()">
+        <option value="date_asc">Oldest first</option>
+        <option value="date_desc">Newest first</option>
+        <option value="bal_desc">Highest balance</option>
+      </select>
     </div>
-    <div class="sep"></div>
-    <span class="tlabel">Salesperson</span>
-    <select id="bal-sp-filter" class="sel" onchange="renderBalance()" style="min-width:120px">
-      <option value="all">All</option>
-    </select>
-    <div class="sep"></div>
-    <span class="tlabel">Sort</span>
-    <select id="bal-sort" class="sel" onchange="renderBalance()">
-      <option value="date_asc">Oldest first</option>
-      <option value="date_desc">Newest first</option>
-      <option value="bal_desc">Highest balance</option>
-    </select>
-    <div class="sep"></div>
-    <span class="tlabel">Status</span>
-    <button class="chip a-teal" data-bst="all" onclick="setBalSt('all')">All</button>
-    <button class="chip" data-bst="Making" onclick="setBalSt('Making')" style="color:#7baaf7;border-color:rgba(91,141,238,0.3)">Making</button>
-    <button class="chip" data-bst="PrintArrived" onclick="setBalSt('PrintArrived')" style="color:#34c77b;border-color:rgba(52,199,123,0.3)">PrintArrived</button>
-    <button class="chip" data-bst="Output" onclick="setBalSt('Output')" style="color:#fbbf24;border-color:rgba(250,204,21,0.3)">Output</button>
-    <button class="chip" data-bst="Pick Up" onclick="setBalSt('Pick Up')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">Pick Up 🔴</button>
-  </div>
-  <!-- Filter bar row 2 - aligned under Status -->
-  <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;margin-bottom:12px;flex-wrap:wrap">
-    <span class="tlabel" style="opacity:0;pointer-events:none;min-width:180px"></span><!-- spacer matching search bar -->
-    <span class="tlabel" style="opacity:0;pointer-events:none">SALESPERSON</span><!-- spacer -->
-    <select class="sel" style="opacity:0;pointer-events:none;min-width:120px"><option></option></select><!-- spacer -->
-    <span class="tlabel" style="opacity:0;pointer-events:none">SORT</span><!-- spacer -->
-    <select class="sel" style="opacity:0;pointer-events:none"><option></option></select><!-- spacer -->
-    <div class="sep" style="opacity:0"></div>
-    <span class="tlabel">BAL. COLLECTED</span>
-    <button class="chip a-teal" data-bbc="all" onclick="setBalBc('all')">All</button>
-    <button class="chip" data-bbc="deliver" onclick="setBalBc('deliver')" style="color:#f97316;border-color:rgba(249,115,22,0.3)">Deliver w/o Collect</button>
-    <button class="chip" data-bbc="may" onclick="setBalBc('may')" style="color:#a855f7;border-color:rgba(168,85,247,0.3)">May Collect</button>
-    <button class="chip" data-bbc="empty" onclick="setBalBc('empty')" style="color:#8b90a0;border-color:rgba(139,144,160,0.3)">No Remark</button>
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0 4px">
+      <div class="sep"></div>
+      <span class="tlabel">Status</span>
+      <button class="chip a-teal" data-bst="all" onclick="setBalSt('all')">All</button>
+      <button class="chip" data-bst="Making" onclick="setBalSt('Making')" style="color:#7baaf7;border-color:rgba(91,141,238,0.3)">Making</button>
+      <button class="chip" data-bst="PrintArrived" onclick="setBalSt('PrintArrived')" style="color:#34c77b;border-color:rgba(52,199,123,0.3)">PrintArrived</button>
+      <button class="chip" data-bst="Output" onclick="setBalSt('Output')" style="color:#fbbf24;border-color:rgba(250,204,21,0.3)">Output</button>
+      <button class="chip" data-bst="Pick Up" onclick="setBalSt('Pick Up')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">Pick Up 🔴</button>
+    </div>
+    <div style="grid-column:1/2"></div><!-- empty spacer row 2 col 1 -->
+    <!-- Row 2 - Bal.Collected directly under Status -->
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 0 6px">
+      <div class="sep"></div>
+      <span class="tlabel">Bal. Collected</span>
+      <button class="chip a-teal" data-bbc="all" onclick="setBalBc('all')">All</button>
+      <button class="chip" data-bbc="deliver" onclick="setBalBc('deliver')" style="color:#f97316;border-color:rgba(249,115,22,0.3)">Deliver w/o Collect</button>
+      <button class="chip" data-bbc="may" onclick="setBalBc('may')" style="color:#a855f7;border-color:rgba(168,85,247,0.3)">May Collect</button>
+      <button class="chip" data-bbc="empty" onclick="setBalBc('empty')" style="color:#8b90a0;border-color:rgba(139,144,160,0.3)">No Remark</button>
+    </div>
   </div>
   <!-- KPI row - 4 cards -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
