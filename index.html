@@ -177,13 +177,13 @@ tbody td{padding:8px 12px;white-space:nowrap}
   </div>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="showPage('overview')">📊 Overview</div>
-  <div class="tab" onclick="showPage('salesperson')">👤 Salesperson</div>
-  <div class="tab" onclick="showPage('dayanalysis')">📅 Day Analysis</div>
-  <div class="tab" onclick="showPage('balance')">💰 Outstanding Balance</div>
-  <div class="tab" onclick="showPage('comparison')">📈 Monthly Comparison</div>
-  <div class="tab" onclick="showPage('orders')">📋 All Orders</div>
+<div class="tabs" id="tab-bar">
+  <div class="tab active" draggable="true" data-page="overview" onclick="showPage('overview')">📊 Overview</div>
+  <div class="tab" draggable="true" data-page="salesperson" onclick="showPage('salesperson')">👤 Salesperson</div>
+  <div class="tab" draggable="true" data-page="dayanalysis" onclick="showPage('dayanalysis')">📅 Day Analysis</div>
+  <div class="tab" draggable="true" data-page="balance" onclick="showPage('balance')">💰 Outstanding Balance</div>
+  <div class="tab" draggable="true" data-page="comparison" onclick="showPage('comparison')">📈 Monthly Comparison</div>
+  <div class="tab" draggable="true" data-page="orders" onclick="showPage('orders')">📋 All Orders</div>
 </div>
 
 <div id="loading"><div class="spinner"></div><div class="loading-text">Fetching live data…</div></div>
@@ -1602,6 +1602,40 @@ async function loadData(){
   }
 }
 loadData();
+
+// Drag-and-drop tab reordering
+(function(){
+  const bar=document.getElementById('tab-bar');
+  let dragging=null;
+
+  bar.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('dragstart',e=>{
+      dragging=tab;
+      setTimeout(()=>tab.style.opacity='0.4',0);
+      e.dataTransfer.effectAllowed='move';
+    });
+    tab.addEventListener('dragend',()=>{
+      dragging.style.opacity='1';
+      dragging=null;
+      bar.querySelectorAll('.tab').forEach(t=>t.classList.remove('drag-over'));
+    });
+    tab.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(tab===dragging)return;
+      bar.querySelectorAll('.tab').forEach(t=>t.classList.remove('drag-over'));
+      tab.classList.add('drag-over');
+      const rect=tab.getBoundingClientRect();
+      const mid=rect.left+rect.width/2;
+      if(e.clientX<mid) bar.insertBefore(dragging,tab);
+      else bar.insertBefore(dragging,tab.nextSibling);
+    });
+    tab.addEventListener('dragleave',()=>tab.classList.remove('drag-over'));
+    tab.addEventListener('drop',e=>{
+      e.preventDefault();
+      tab.classList.remove('drag-over');
+    });
+  });
+})();
 </script>
 </body>
 </html>
