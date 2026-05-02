@@ -341,9 +341,15 @@ tbody td{padding:8px 12px;white-space:nowrap}
     <button class="chip" data-bst="Output" onclick="setBalSt('Output')" style="color:#fbbf24;border-color:rgba(250,204,21,0.3)">Output</button>
     <button class="chip" data-bst="Pick Up" onclick="setBalSt('Pick Up')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">Pick Up 🔴</button>
   </div>
-  <!-- Filter bar row 2 -->
-  <div class="toolbar" style="margin-bottom:12px">
-    <span class="tlabel">Bal. Collected</span>
+  <!-- Filter bar row 2 - aligned under Status -->
+  <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;margin-bottom:12px;flex-wrap:wrap">
+    <span class="tlabel" style="opacity:0;pointer-events:none;min-width:180px"></span><!-- spacer matching search bar -->
+    <span class="tlabel" style="opacity:0;pointer-events:none">SALESPERSON</span><!-- spacer -->
+    <select class="sel" style="opacity:0;pointer-events:none;min-width:120px"><option></option></select><!-- spacer -->
+    <span class="tlabel" style="opacity:0;pointer-events:none">SORT</span><!-- spacer -->
+    <select class="sel" style="opacity:0;pointer-events:none"><option></option></select><!-- spacer -->
+    <div class="sep" style="opacity:0"></div>
+    <span class="tlabel">BAL. COLLECTED</span>
     <button class="chip a-teal" data-bbc="all" onclick="setBalBc('all')">All</button>
     <button class="chip" data-bbc="deliver" onclick="setBalBc('deliver')" style="color:#f97316;border-color:rgba(249,115,22,0.3)">Deliver w/o Collect</button>
     <button class="chip" data-bbc="may" onclick="setBalBc('may')" style="color:#a855f7;border-color:rgba(168,85,247,0.3)">May Collect</button>
