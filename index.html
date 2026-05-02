@@ -340,6 +340,12 @@ tbody td{padding:8px 12px;white-space:nowrap}
     <button class="chip" data-bst="PrintArrived" onclick="setBalSt('PrintArrived')" style="color:#34c77b;border-color:rgba(52,199,123,0.3)">PrintArrived</button>
     <button class="chip" data-bst="Output" onclick="setBalSt('Output')" style="color:#fbbf24;border-color:rgba(250,204,21,0.3)">Output</button>
     <button class="chip" data-bst="Pick Up" onclick="setBalSt('Pick Up')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">Pick Up 🔴</button>
+    <div class="sep"></div>
+    <span class="tlabel">Bal. Collected</span>
+    <button class="chip a-teal" data-bbc="all" onclick="setBalBc('all')">All</button>
+    <button class="chip" data-bbc="deliver" onclick="setBalBc('deliver')" style="color:#f97316;border-color:rgba(249,115,22,0.3)">Deliver w/o Collect</button>
+    <button class="chip" data-bbc="may" onclick="setBalBc('may')" style="color:#a855f7;border-color:rgba(168,85,247,0.3)">May Collect</button>
+    <button class="chip" data-bbc="empty" onclick="setBalBc('empty')" style="color:#8b90a0;border-color:rgba(139,144,160,0.3)">No Remark</button>
   </div>
   <!-- KPI row - 4 cards -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
@@ -430,7 +436,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
 
 <script>
 const CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vQlC6n9OmpmwrL24PYzSOPbrEcaupf9pNJzCcpdARonmMbJlf0KZuvQk8jnnLlmkn1pi-tvCaZVAYM_/pub?gid=1579074762&single=true&output=csv';
-let ALL=[], CH={}, srcF='all', pp='all', os='all', dayMetric='revenue', balSt='all';
+let ALL=[], CH={}, srcF='all', pp='all', os='all', dayMetric='revenue', balSt='all', balBc='all';
 let SGD_RATES={'latest':3.10};
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const DAYS_S=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -657,6 +663,7 @@ function setSrc(s){srcF=s;document.querySelectorAll('[data-src]').forEach(b=>b.c
 function setPP(p){pp=p;document.querySelectorAll('[data-pp]').forEach(b=>b.classList.toggle('a-teal',b.dataset.pp===p));renderOrders()}
 function setOS(s){os=s;document.querySelectorAll('[data-os]').forEach(b=>b.classList.toggle('a-teal',b.dataset.os===s));renderOrders()}
 function setBalSt(s){balSt=s;document.querySelectorAll('[data-bst]').forEach(b=>b.classList.toggle('a-teal',b.dataset.bst===s));renderBalance();}
+function setBalBc(s){balBc=s;document.querySelectorAll('[data-bbc]').forEach(b=>b.classList.toggle('a-teal',b.dataset.bbc===s));renderBalance();}
 function setDayMetric(m){dayMetric=m;document.querySelectorAll('[data-dm]').forEach(b=>b.classList.toggle('a-teal',b.dataset.dm===m));renderDayAnalysis()}
 function applyFilters(){try{renderOverview();}catch(e){console.error('renderOverview:',e);}}
 
@@ -1206,6 +1213,17 @@ function renderBalance(){
     return true;
   });
 
+  // Apply Balance Collected filter
+  if(balBc!=='all'){
+    orders=orders.filter(o=>{
+      const bc=(o.balCollected||'').toLowerCase();
+      if(balBc==='deliver') return bc.includes('deliver');
+      if(balBc==='may') return bc.includes('may');
+      if(balBc==='empty') return !bc||bc.trim()==='';
+      return true;
+    });
+  }
+
   // Apply search filter
   const balQ=(document.getElementById('bal-q')&&document.getElementById('bal-q').value||'').toLowerCase().trim();
   if(balQ) orders=orders.filter(o=>
@@ -1284,7 +1302,13 @@ function renderBalance(){
       +'<td class="td-amt">'+rm(o.total)+'</td>'
       +'<td style="color:var(--green);font-family:monospace;font-size:12px">'+rm(o.dep)+'</td>'
       +'<td style="color:#f87171;font-family:monospace;font-size:13px;font-weight:700">'+rm(o.balance)+'</td>'
-      +'<td style="font-size:12px;color:var(--text3);">'+(o.balCollected||'—')+'</td>'
+      +'<td style="font-size:11px;">'+(()=>{
+        const bc=(o.balCollected||'').toLowerCase();
+        if(!o.balCollected||!o.balCollected.trim()) return '<span style="color:var(--text3)">—</span>';
+        if(bc.includes('deliver')) return '<span style="color:#f97316;font-weight:600">'+o.balCollected+'</span>';
+        if(bc.includes('may')) return '<span style="color:#a855f7;font-weight:600">'+o.balCollected+'</span>';
+        return '<span style="color:var(--text3)">'+o.balCollected+'</span>';
+      })()+'</td>'
       +'<td>'+statusBadge+'</td>'
       +'<td>'+sb(o.src)+'</td>'
       +'<td style="font-size:11px">'+spPhoto+(o.sp||'—')+'</td>'
