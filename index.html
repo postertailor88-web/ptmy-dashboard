@@ -315,20 +315,50 @@ tbody td{padding:8px 12px;white-space:nowrap}
 
 <!-- ═══ BALANCE ═══ -->
 <div class="page" id="page-balance">
-<div class="main">
-  <div class="kpi-grid" style="margin-bottom:16px">
-    <div class="kpi c-red"><div class="kpi-label">Total Outstanding</div><div class="kpi-val c-red" id="b-total">—</div><div class="kpi-sub" id="b-count">—</div></div>
-    <div class="kpi c-amber"><div class="kpi-label">Avg Balance/Order</div><div class="kpi-val c-amber" id="b-avg">—</div><div class="kpi-sub">per deposit order</div></div>
-    <div class="kpi c-blue"><div class="kpi-label">Largest Balance</div><div class="kpi-val c-blue" id="b-max">—</div><div class="kpi-sub" id="b-max-name">—</div></div>
+  <!-- KPI row -->
+  <div class="kpi-row" style="margin-bottom:14px">
+    <div class="kpi-card" style="border-top:2px solid #ef4444">
+      <div class="kpi-label">TOTAL OUTSTANDING</div>
+      <div class="kpi-val" id="bal-total" style="color:#ef4444">—</div>
+      <div class="kpi-sub" id="bal-count">—</div>
+    </div>
+    <div class="kpi-card" style="border-top:2px solid var(--amber)">
+      <div class="kpi-label">AVG BALANCE/ORDER</div>
+      <div class="kpi-val" id="bal-avg" style="color:var(--amber)">—</div>
+      <div class="kpi-sub">per deposit order</div>
+    </div>
+    <div class="kpi-card" style="border-top:2px solid #f87171">
+      <div class="kpi-label">🚨 SHIPPED NOT COLLECTED</div>
+      <div class="kpi-val" id="bal-shipped" style="color:#f87171">—</div>
+      <div class="kpi-sub" id="bal-shipped-sub">items shipped, balance not collected</div>
+    </div>
+    <div class="kpi-card" style="border-top:2px solid var(--blue2)">
+      <div class="kpi-label">LARGEST BALANCE</div>
+      <div class="kpi-val" id="bal-largest" style="color:var(--blue2)">—</div>
+      <div class="kpi-sub" id="bal-largest-sub">—</div>
+    </div>
   </div>
+  <!-- Filter bar -->
+  <div class="toolbar" style="margin-bottom:10px">
+    <span class="tlabel">Salesperson</span>
+    <select id="bal-sp-filter" class="sel" onchange="renderBalance()" style="min-width:120px">
+      <option value="all">All</option>
+    </select>
+    <div style="margin-left:12px;font-size:11px;color:var(--text3)">
+      🔴 Red rows = item already shipped but balance not yet collected
+    </div>
+  </div>
+  <!-- Table -->
   <div class="tcard">
-    <div class="thead-bar"><span class="thead-title">Customers with Outstanding Balance</span><span class="thead-count" id="b-tcount">—</span></div>
-    <div class="twrap"><table><thead><tr><th>Date</th><th>Client</th><th>Contact</th><th>Frame</th><th>Order Total</th><th>Deposited</th><th>Balance Due</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="b-tbody"></tbody></table></div>
+    <div class="thead-bar"><span class="thead-title">Customers with Outstanding Balance</span><span class="thead-count" id="bal-tcount">—</span></div>
+    <div class="twrap"><table><thead><tr>
+      <th>Date</th><th>Order ID</th><th>Client</th><th>Contact</th><th>Frame</th>
+      <th>Order Total</th><th>Deposited</th><th>Balance Due</th>
+      <th>Status</th><th>Source</th><th>Salesperson</th>
+    </tr></thead><tbody id="bal-tbody"></tbody></table></div>
   </div>
-</div>
 </div>
 
-<!-- ═══ COMPARISON ═══ -->
 <div class="page" id="page-comparison">
 <div class="main">
   <div class="mrow" id="mrow"></div>
@@ -556,7 +586,10 @@ function process(rows){
       balance:pay==='Deposit'?Math.max(0,totalAmt-depAmt):0,sp,isSGD,
       totalSGD:isSGD?(typeof totalSGD!=='undefined'?totalSGD:0):null,
       depSGD:isSGD?(typeof depSGD!=='undefined'?depSGD:0):null,
-      orderId:(r['Order ID']||r['order id']||r['OrderID']||r['Invoice Number']||'').trim()};
+      orderId:(r['Order ID']||r['order id']||r['OrderID']||r['Invoice Number']||'').trim(),
+      status:(r['Status']||'').trim(),
+      remarks:(r['Remarks']||r['Remark']||'').trim(),
+      contact:(r['Client Contact']||r['Contact']||'').trim()};
   }).filter(o=>o.total>0&&o.date&&o.client&&o.client.length>1
     &&!o.client.toLowerCase().startsWith('test')
     &&!o.client.toLowerCase().startsWith('hxtest'));
@@ -1142,17 +1175,80 @@ function renderDayAnalysis(){
 
 /* ── BALANCE ── */
 function renderBalance(){
-  const pend=ALL.filter(o=>o.balance>0).sort((a,b)=>b.balance-a.balance);
-  const tot=pend.reduce((s,o)=>s+o.balance,0);
-  document.getElementById('b-total').textContent=rm(tot);document.getElementById('b-count').textContent=pend.length+' orders pending';
-  document.getElementById('b-avg').textContent=pend.length?rm(tot/pend.length):'RM 0';
-  if(pend.length){document.getElementById('b-max').textContent=rm(pend[0].balance);document.getElementById('b-max-name').textContent=pend[0].client}
-  document.getElementById('b-tcount').textContent=pend.length+' customers';
-  const sb=s=>{if(s==='PTMY')return`<span class="badge b-ptmy">PTMY</span>`;if(s==='FS2')return`<span class="badge b-fs2">FS2</span>`;if(s==='Dealer')return`<span class="badge b-dealer">Dealer</span>`;return`<span class="badge b-other">${s||'—'}</span>`};
-  document.getElementById('b-tbody').innerHTML=pend.map(o=>`
-    <tr><td class="td-mono td-dim">${o.dateStr}</td><td class="td-name">${o.client}</td><td class="td-mono td-dim" style="font-size:10px">${o.contact}</td><td style="color:var(--text2);font-size:11px">${o.frame}</td><td class="td-amt">${rm(o.total)}</td><td class="td-ok">${rm(o.dep)}</td><td class="td-bal">${rm(o.balance)}</td><td>${sb(o.src)}</td><td class="td-mono td-dim" style="font-size:10px">${o.invoice||'—'}</td></tr>`).join('')
-    ||'<tr><td colspan="9" class="no-data">No outstanding balances 🎉</td></tr>';
+  // Filter: Payment=Deposit AND remarks contain collect/deliver keywords
+  const KEYWORDS=['deliver without collect deposit','may collect deposit','deliver without collect','without collect'];
+  let orders=ALL.filter(o=>{
+    if(o.pay!=='Deposit')return false;
+    if(o.balance<=0)return false;
+    const rem=o.remarks.toLowerCase();
+    return KEYWORDS.some(k=>rem.includes(k));
+  });
+
+  // Apply salesperson filter
+  const spFilter=document.getElementById('bal-sp-filter');
+  const selSP=spFilter?spFilter.value:'all';
+  if(selSP!=='all') orders=orders.filter(o=>o.sp===selSP||o.sp.includes(selSP));
+
+  // Sort by balance descending
+  orders.sort((a,b)=>b.balance-a.balance);
+
+  const totalOut=orders.reduce((s,o)=>s+o.balance,0);
+  const pickedUp=orders.filter(o=>o.status.toLowerCase().includes('pick up')||o.status.toLowerCase().includes('output')||o.status.toLowerCase().includes('printarrived')).length;
+
+  // KPI cards
+  document.getElementById('bal-total').textContent='RM '+totalOut.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('bal-count').textContent=orders.length+' orders pending';
+  document.getElementById('bal-avg').textContent='RM '+(orders.length?totalOut/orders.length:0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('bal-shipped').textContent=pickedUp;
+  document.getElementById('bal-shipped-sub').textContent=pickedUp+' shipped, balance not collected';
+
+  // Largest
+  if(orders.length){
+    document.getElementById('bal-largest').textContent='RM '+orders[0].balance.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('bal-largest-sub').textContent=orders[0].client;
+  }
+
+  // Populate SP filter dropdown
+  if(spFilter&&spFilter.options.length<=1){
+    const sps=[...new Set(orders.map(o=>o.sp).filter(Boolean))].sort();
+    sps.forEach(sp=>{
+      const opt=document.createElement('option');
+      opt.value=sp; opt.textContent=sp;
+      spFilter.appendChild(opt);
+    });
+  }
+
+  // Table header count
+  document.getElementById('bal-tcount').textContent=orders.length+' customers';
+
+  // Render rows
+  const isShipped=o=>o.status.toLowerCase().includes('pick up')||o.status.toLowerCase().includes('output')||o.status.toLowerCase().includes('printarrived')||o.status.toLowerCase().includes('making');
+  const sb=s=>{if(s==='PTMY')return'<span class="badge b-ptmy">PTMY</span>';if(s==='FS2')return'<span class="badge b-fs2">FS2</span>';if(s==='PTSG')return'<span class="badge" style="background:rgba(52,199,123,.12);color:var(--green)">PTSG</span>';if(s==='Dealer')return'<span class="badge b-dealer">Dealer</span>';return'<span class="badge b-other">'+(s||'—')+'</span>';};
+
+  document.getElementById('bal-tbody').innerHTML=orders.map(o=>{
+    const shipped=isShipped(o);
+    const rowStyle=shipped?'background:rgba(239,68,68,0.06);border-left:3px solid rgba(239,68,68,0.5)':'';
+    const statusBadge=shipped
+      ?'<span style="background:rgba(239,68,68,0.15);color:#f87171;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>'
+      :'<span style="background:rgba(250,204,21,0.1);color:#fbbf24;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">'+o.status+'</span>';
+    const spCfg=SP_CONFIG[o.sp]||{color:'#5b8dee'};
+    const spPhoto=spCfg.photo?'<img src="'+spCfg.photo+'" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;border:1.5px solid '+spCfg.color+'">':'';
+    return '<tr style="'+rowStyle+'">'
+      +'<td class="td-mono td-dim">'+o.dateStr+'</td>'
+      +'<td class="td-mono" style="font-size:11px;color:var(--text3)">'+( o.orderId||'—')+'</td>'
+      +'<td class="td-name">'+(shipped?'<span style="color:#f87171;font-weight:700">'+o.client+'</span>':o.client)+'</td>'
+      +'<td style="font-size:11px;color:var(--text3)">'+o.contact+'</td>'
+      +'<td style="font-size:11px;color:var(--text2)">'+o.frame+'</td>'
+      +'<td class="td-amt">'+rm(o.total)+'</td>'
+      +'<td style="color:var(--green);font-family:monospace;font-size:12px">'+rm(o.dep)+'</td>'
+      +'<td style="color:#f87171;font-family:monospace;font-size:13px;font-weight:700">'+rm(o.balance)+'</td>'
+      +'<td>'+statusBadge+'</td>'
+      +'<td>'+sb(o.src)+'</td>'
+      +'<td style="font-size:11px">'+spPhoto+(o.sp||'—')+'</td>'
+      +'</tr>';
+  }).join('')||'<tr><td colspan="11" class="no-data">No outstanding balance orders found</td></tr>';
 }
+
 
 /* ── COMPARISON ── */
 function renderComparison(){
