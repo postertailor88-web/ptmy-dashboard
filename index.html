@@ -315,8 +315,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
 
 <!-- ═══ BALANCE ═══ -->
 <div class="page" id="page-balance">
-  <!-- KPI row -->
-  <div class="kpi-row" style="margin-bottom:14px">
+  <div class="kpi-row" style="margin-bottom:14px;display:flex;gap:12px;flex-wrap:wrap">
     <div class="kpi-card" style="border-top:2px solid #ef4444">
       <div class="kpi-label">TOTAL OUTSTANDING</div>
       <div class="kpi-val" id="bal-total" style="color:#ef4444">—</div>
@@ -1188,6 +1187,15 @@ function renderBalance(){
   const spFilter=document.getElementById('bal-sp-filter');
   const selSP=spFilter?spFilter.value:'all';
   if(selSP!=='all') orders=orders.filter(o=>o.sp===selSP||o.sp.includes(selSP));
+
+  // Debug: log what we found
+  const depositOrders=ALL.filter(o=>o.pay==='Deposit'&&o.balance>0);
+  console.log('Deposit orders with balance>0:',depositOrders.length);
+  if(depositOrders.length>0){
+    console.log('Sample remarks:',[...new Set(depositOrders.slice(0,10).map(o=>o.remarks))]);
+    console.log('Sample status:',[...new Set(depositOrders.slice(0,10).map(o=>o.status))]);
+  }
+  console.log('Filtered by remarks:',orders.length);
 
   // Sort by balance descending
   orders.sort((a,b)=>b.balance-a.balance);
