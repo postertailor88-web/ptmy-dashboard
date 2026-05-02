@@ -315,8 +315,8 @@ tbody td{padding:8px 12px;white-space:nowrap}
 
 <!-- ═══ BALANCE ═══ -->
 <div class="page" id="page-balance"><div class="main">
-  <!-- Filter bar -->
-  <div class="toolbar" style="margin-bottom:10px">
+  <!-- Filter bar row 1 -->
+  <div class="toolbar" style="margin-bottom:8px">
     <div class="search-wrap" style="min-width:180px">
       <span class="si">🔍</span>
       <input class="search-input" id="bal-q" placeholder="Search client / order ID…" oninput="renderBalance()">
@@ -340,7 +340,9 @@ tbody td{padding:8px 12px;white-space:nowrap}
     <button class="chip" data-bst="PrintArrived" onclick="setBalSt('PrintArrived')" style="color:#34c77b;border-color:rgba(52,199,123,0.3)">PrintArrived</button>
     <button class="chip" data-bst="Output" onclick="setBalSt('Output')" style="color:#fbbf24;border-color:rgba(250,204,21,0.3)">Output</button>
     <button class="chip" data-bst="Pick Up" onclick="setBalSt('Pick Up')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">Pick Up 🔴</button>
-    <div class="sep"></div>
+  </div>
+  <!-- Filter bar row 2 -->
+  <div class="toolbar" style="margin-bottom:12px">
     <span class="tlabel">Bal. Collected</span>
     <button class="chip a-teal" data-bbc="all" onclick="setBalBc('all')">All</button>
     <button class="chip" data-bbc="deliver" onclick="setBalBc('deliver')" style="color:#f97316;border-color:rgba(249,115,22,0.3)">Deliver w/o Collect</button>
