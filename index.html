@@ -344,8 +344,15 @@ tbody td{padding:8px 12px;white-space:nowrap}
     <select id="bal-sp-filter" class="sel" onchange="renderBalance()" style="min-width:120px">
       <option value="all">All</option>
     </select>
+    <div class="sep"></div>
+    <span class="tlabel">Sort</span>
+    <select id="bal-sort" class="sel" onchange="renderBalance()">
+      <option value="date_asc">Oldest first</option>
+      <option value="date_desc">Newest first</option>
+      <option value="bal_desc">Highest balance</option>
+    </select>
     <div style="margin-left:12px;font-size:11px;color:var(--text3)">
-      🔴 Red rows = item already shipped but balance not yet collected
+      🔴 Red status = Pick Up (shipped, balance not collected)
     </div>
   </div>
   <!-- Table -->
@@ -1183,8 +1190,11 @@ function renderBalance(){
   const selSP=spFilter?spFilter.value:'all';
   if(selSP!=='all') orders=orders.filter(o=>o.sp===selSP||o.sp.includes(selSP));
 
-  // Sort by balance descending
-  orders.sort((a,b)=>b.balance-a.balance);
+  // Sort based on dropdown
+  const sortVal=document.getElementById('bal-sort')?document.getElementById('bal-sort').value:'date_asc';
+  if(sortVal==='date_asc') orders.sort((a,b)=>(a.date||0)-(b.date||0));
+  else if(sortVal==='date_desc') orders.sort((a,b)=>(b.date||0)-(a.date||0));
+  else if(sortVal==='bal_desc') orders.sort((a,b)=>b.balance-a.balance);
 
   const totalOut=orders.reduce((s,o)=>s+o.balance,0);
   const pickedUp=orders.filter(o=>{const s=o.status.toLowerCase();return s.includes('pick up')||s.includes('output')||s.includes('printarrived')||s.includes('making');}).length;
@@ -1216,21 +1226,21 @@ function renderBalance(){
   document.getElementById('bal-tcount').textContent=orders.length+' customers';
 
   // Render rows
-  const isShipped=o=>{const s=o.status.toLowerCase();return s.includes('pick up')||s.includes('output')||s.includes('printarrived')||s.includes('making');};
+  const isShipped=o=>o.status.toLowerCase().includes('pick up');
   const sb=s=>{if(s==='PTMY')return'<span class="badge b-ptmy">PTMY</span>';if(s==='FS2')return'<span class="badge b-fs2">FS2</span>';if(s==='PTSG')return'<span class="badge" style="background:rgba(52,199,123,.12);color:var(--green)">PTSG</span>';if(s==='Dealer')return'<span class="badge b-dealer">Dealer</span>';return'<span class="badge b-other">'+(s||'—')+'</span>';};
 
   document.getElementById('bal-tbody').innerHTML=orders.map(o=>{
     const shipped=isShipped(o);
-    const rowStyle=shipped?'background:rgba(239,68,68,0.06);border-left:3px solid rgba(239,68,68,0.5)':'';
+    const rowStyle='';
     const statusBadge=shipped
-      ?'<span style="background:rgba(239,68,68,0.15);color:#f87171;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>'
-      :'<span style="background:rgba(250,204,21,0.1);color:#fbbf24;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">'+o.status+'</span>';
+      ?'<span style="background:rgba(239,68,68,0.25);color:#f87171;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;border:1px solid rgba(239,68,68,0.4)">'+o.status+'</span>'
+      :'<span style="background:rgba(100,100,120,0.15);color:#8b90a0;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500">'+o.status+'</span>';
     const spCfg=SP_CONFIG[o.sp]||{color:'#5b8dee'};
     const spPhoto=spCfg.photo?'<img src="'+spCfg.photo+'" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;border:1.5px solid '+spCfg.color+'">':'';
     return '<tr style="'+rowStyle+'">'
       +'<td class="td-mono td-dim">'+o.dateStr+'</td>'
       +'<td class="td-mono" style="font-size:11px;color:var(--text3)">'+( o.orderId||'—')+'</td>'
-      +'<td class="td-name">'+(shipped?'<span style="color:#f87171;font-weight:700">'+o.client+'</span>':o.client)+'</td>'
+      +'<td class="td-name">'+o.client+'</td>'
       +'<td style="font-size:11px;color:var(--text3)">'+o.contact+'</td>'
       +'<td style="font-size:11px;color:var(--text2)">'+o.frame+'</td>'
       +'<td class="td-amt">'+rm(o.total)+'</td>'
