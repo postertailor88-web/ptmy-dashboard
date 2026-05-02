@@ -317,6 +317,11 @@ tbody td{padding:8px 12px;white-space:nowrap}
 <div class="page" id="page-balance"><div class="main">
   <!-- Filter bar -->
   <div class="toolbar" style="margin-bottom:10px">
+    <div class="search-wrap" style="min-width:180px">
+      <span class="si">🔍</span>
+      <input class="search-input" id="bal-q" placeholder="Search client / order ID…" oninput="renderBalance()">
+    </div>
+    <div class="sep"></div>
     <span class="tlabel">Salesperson</span>
     <select id="bal-sp-filter" class="sel" onchange="renderBalance()" style="min-width:120px">
       <option value="all">All</option>
@@ -1186,8 +1191,25 @@ function renderDayAnalysis(){
 
 /* ── BALANCE ── */
 function renderBalance(){
-  // Filter: Payment=Deposit AND balance > 0
-  let orders=ALL.filter(o=>o.pay==='Deposit'&&o.balance>0);
+  // Filter: Payment=Deposit AND balance > 0 AND NOT already collected
+  const COLLECTED_KEYWORDS=['pickup n collected','pick up n collected','pickedup','collected','balance collected'];
+  let orders=ALL.filter(o=>{
+    if(o.pay!=='Deposit') return false;
+    if(o.balance<=0) return false;
+    // Exclude if remarks say already collected
+    const rem=(o.remarks||'').toLowerCase();
+    if(COLLECTED_KEYWORDS.some(k=>rem.includes(k))) return false;
+    // Also exclude based on Balance Collected column if available
+    return true;
+  });
+
+  // Apply search filter
+  const balQ=(document.getElementById('bal-q')&&document.getElementById('bal-q').value||'').toLowerCase().trim();
+  if(balQ) orders=orders.filter(o=>
+    o.client.toLowerCase().includes(balQ)||
+    (o.orderId||'').toLowerCase().includes(balQ)||
+    (o.contact||'').toLowerCase().includes(balQ)
+  );
 
   // Apply status filter
   if(balSt!=='all') orders=orders.filter(o=>o.status.toLowerCase().includes(balSt.toLowerCase()));
