@@ -1603,10 +1603,27 @@ async function loadData(){
 }
 loadData();
 
-// Drag-and-drop tab reordering
+// Drag-and-drop tab reordering with localStorage persistence
 (function(){
   const bar=document.getElementById('tab-bar');
   let dragging=null;
+
+  // Restore saved order on load
+  function saveOrder(){
+    const order=[...bar.querySelectorAll('.tab')].map(t=>t.dataset.page);
+    localStorage.setItem('ptmy_tab_order',JSON.stringify(order));
+  }
+  function restoreOrder(){
+    try{
+      const saved=JSON.parse(localStorage.getItem('ptmy_tab_order'));
+      if(!saved||!saved.length)return;
+      saved.forEach(page=>{
+        const tab=bar.querySelector('[data-page="'+page+'"]');
+        if(tab) bar.appendChild(tab);
+      });
+    }catch(e){}
+  }
+  restoreOrder();
 
   bar.querySelectorAll('.tab').forEach(tab=>{
     tab.addEventListener('dragstart',e=>{
@@ -1618,6 +1635,7 @@ loadData();
       dragging.style.opacity='1';
       dragging=null;
       bar.querySelectorAll('.tab').forEach(t=>t.classList.remove('drag-over'));
+      saveOrder(); // save after drag ends
     });
     tab.addEventListener('dragover',e=>{
       e.preventDefault();
