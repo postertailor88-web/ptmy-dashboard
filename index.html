@@ -315,26 +315,27 @@ tbody td{padding:8px 12px;white-space:nowrap}
 
 <!-- ═══ BALANCE ═══ -->
 <div class="page" id="page-balance">
-  <div class="kpi-row" style="margin-bottom:14px;display:flex;gap:12px;flex-wrap:wrap">
-    <div class="kpi-card" style="border-top:2px solid #ef4444">
-      <div class="kpi-label">TOTAL OUTSTANDING</div>
-      <div class="kpi-val" id="bal-total" style="color:#ef4444">—</div>
-      <div class="kpi-sub" id="bal-count">—</div>
+  <!-- KPI row - 4 cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid #ef4444;border-radius:var(--r);padding:16px 18px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Total Outstanding</div>
+      <div id="bal-total" style="font-size:22px;font-weight:800;color:#ef4444;font-family:'JetBrains Mono',monospace">—</div>
+      <div id="bal-count" style="font-size:11px;color:var(--text3);margin-top:4px">—</div>
     </div>
-    <div class="kpi-card" style="border-top:2px solid var(--amber)">
-      <div class="kpi-label">AVG BALANCE/ORDER</div>
-      <div class="kpi-val" id="bal-avg" style="color:var(--amber)">—</div>
-      <div class="kpi-sub">per deposit order</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--amber);border-radius:var(--r);padding:16px 18px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Avg Balance / Order</div>
+      <div id="bal-avg" style="font-size:22px;font-weight:800;color:var(--amber);font-family:'JetBrains Mono',monospace">—</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">per deposit order</div>
     </div>
-    <div class="kpi-card" style="border-top:2px solid #f87171">
-      <div class="kpi-label">🚨 SHIPPED NOT COLLECTED</div>
-      <div class="kpi-val" id="bal-shipped" style="color:#f87171">—</div>
-      <div class="kpi-sub" id="bal-shipped-sub">items shipped, balance not collected</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid #f87171;border-radius:var(--r);padding:16px 18px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">🚨 In Progress / Shipped</div>
+      <div id="bal-shipped" style="font-size:22px;font-weight:800;color:#f87171;font-family:'JetBrains Mono',monospace">—</div>
+      <div id="bal-shipped-sub" style="font-size:11px;color:var(--text3);margin-top:4px">balance not collected</div>
     </div>
-    <div class="kpi-card" style="border-top:2px solid var(--blue2)">
-      <div class="kpi-label">LARGEST BALANCE</div>
-      <div class="kpi-val" id="bal-largest" style="color:var(--blue2)">—</div>
-      <div class="kpi-sub" id="bal-largest-sub">—</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--blue2);border-radius:var(--r);padding:16px 18px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Largest Balance</div>
+      <div id="bal-largest" style="font-size:22px;font-weight:800;color:var(--blue2);font-family:'JetBrains Mono',monospace">—</div>
+      <div id="bal-largest-sub" style="font-size:11px;color:var(--text3);margin-top:4px">—</div>
     </div>
   </div>
   <!-- Filter bar -->
@@ -1186,7 +1187,7 @@ function renderBalance(){
   orders.sort((a,b)=>b.balance-a.balance);
 
   const totalOut=orders.reduce((s,o)=>s+o.balance,0);
-  const pickedUp=orders.filter(o=>o.status.toLowerCase().includes('pick up')||o.status.toLowerCase().includes('output')||o.status.toLowerCase().includes('printarrived')).length;
+  const pickedUp=orders.filter(o=>{const s=o.status.toLowerCase();return s.includes('pick up')||s.includes('output')||s.includes('printarrived')||s.includes('making');}).length;
 
   // KPI cards
   document.getElementById('bal-total').textContent='RM '+totalOut.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -1215,7 +1216,7 @@ function renderBalance(){
   document.getElementById('bal-tcount').textContent=orders.length+' customers';
 
   // Render rows
-  const isShipped=o=>o.status.toLowerCase().includes('pick up')||o.status.toLowerCase().includes('output')||o.status.toLowerCase().includes('printarrived')||o.status.toLowerCase().includes('making');
+  const isShipped=o=>{const s=o.status.toLowerCase();return s.includes('pick up')||s.includes('output')||s.includes('printarrived')||s.includes('making');};
   const sb=s=>{if(s==='PTMY')return'<span class="badge b-ptmy">PTMY</span>';if(s==='FS2')return'<span class="badge b-fs2">FS2</span>';if(s==='PTSG')return'<span class="badge" style="background:rgba(52,199,123,.12);color:var(--green)">PTSG</span>';if(s==='Dealer')return'<span class="badge b-dealer">Dealer</span>';return'<span class="badge b-other">'+(s||'—')+'</span>';};
 
   document.getElementById('bal-tbody').innerHTML=orders.map(o=>{
