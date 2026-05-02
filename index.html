@@ -1174,28 +1174,13 @@ function renderDayAnalysis(){
 
 /* ── BALANCE ── */
 function renderBalance(){
-  // Filter: Payment=Deposit AND remarks contain collect/deliver keywords
-  const KEYWORDS=['deliver without collect deposit','may collect deposit','deliver without collect','without collect'];
-  let orders=ALL.filter(o=>{
-    if(o.pay!=='Deposit')return false;
-    if(o.balance<=0)return false;
-    const rem=o.remarks.toLowerCase();
-    return KEYWORDS.some(k=>rem.includes(k));
-  });
+  // Filter: Payment=Deposit AND balance > 0
+  let orders=ALL.filter(o=>o.pay==='Deposit'&&o.balance>0);
 
   // Apply salesperson filter
   const spFilter=document.getElementById('bal-sp-filter');
   const selSP=spFilter?spFilter.value:'all';
   if(selSP!=='all') orders=orders.filter(o=>o.sp===selSP||o.sp.includes(selSP));
-
-  // Debug: log what we found
-  const depositOrders=ALL.filter(o=>o.pay==='Deposit'&&o.balance>0);
-  console.log('Deposit orders with balance>0:',depositOrders.length);
-  if(depositOrders.length>0){
-    console.log('Sample remarks:',[...new Set(depositOrders.slice(0,10).map(o=>o.remarks))]);
-    console.log('Sample status:',[...new Set(depositOrders.slice(0,10).map(o=>o.status))]);
-  }
-  console.log('Filtered by remarks:',orders.length);
 
   // Sort by balance descending
   orders.sort((a,b)=>b.balance-a.balance);
@@ -1443,10 +1428,10 @@ async function fetchSGDRates(orders){
   try{
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),5000); // 5s timeout
-    const res=await fetch('https://api.frankfurter.app/latest?from=SGD&to=MYR',{signal:controller.signal});
+    const res=await fetch('https://open.er-api.com/v6/latest/SGD',{signal:controller.signal});
     clearTimeout(timeout);
     const data=await res.json();
-    if(data.rates&&data.rates.MYR){
+    if(data&&data.rates&&data.rates.MYR){
       SGD_RATES['latest']=data.rates.MYR;
       // Apply updated rate to all SGD orders
       ALL.forEach(o=>{
