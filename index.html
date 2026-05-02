@@ -375,8 +375,8 @@ tbody td{padding:8px 12px;white-space:nowrap}
         <button onclick="exportExcel()" style="background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:#7ba7f5;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export Excel</button>
       </div>
     </div>
-    <div class="twrap"><table><thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
     <div id="o-summary"></div>
+    <div class="twrap"><table><thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
   </div>
 </div>
 </div>
@@ -1246,7 +1246,7 @@ function renderOrders(){
   const sumEl=document.getElementById('o-summary');
   if(sumEl){
     // Render summary first, then position cells by reading actual header cell positions
-    sumEl.innerHTML=`<div style="background:var(--surface2);border-top:2px solid var(--border2);border-radius:0 0 var(--r) var(--r);padding:10px 0;position:relative;min-height:48px">
+    sumEl.innerHTML=`<div style="background:var(--surface2);border-bottom:2px solid var(--border2);border-radius:var(--r) var(--r) 0 0;padding:10px 0;position:relative;min-height:48px">
       <div id="sum-label" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap">
         ${orders.length} orders &nbsp;·&nbsp;
         <span style="color:var(--green)">${paidCount} paid</span> &nbsp;·&nbsp;
