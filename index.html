@@ -367,8 +367,8 @@ tbody td{padding:8px 12px;white-space:nowrap}
   <div class="tcard">
     <div class="thead-bar"><span class="thead-title">Customers with Outstanding Balance</span><span class="thead-count" id="bal-tcount">—</span></div>
     <div class="twrap"><table><thead><tr>
-      <th>Date</th><th>Order ID</th><th>Client</th><th>Contact</th><th>Frame</th>
-      <th>Order Total</th><th>Deposited</th><th>Balance Due</th>
+      <th>Date</th><th>Order ID</th><th>Client</th><th>Contact</th>
+      <th>Order Total</th><th>Deposited</th><th>Balance Due</th><th>Bal. Collected</th>
       <th>Status</th><th>Source</th><th>Salesperson</th>
     </tr></thead><tbody id="bal-tbody"></tbody></table></div>
   </div>
@@ -604,7 +604,8 @@ function process(rows){
       orderId:(r['Order ID']||r['order id']||r['OrderID']||r['Invoice Number']||'').trim(),
       status:(r['Status']||'').trim(),
       remarks:(r['Remarks']||r['Remark']||'').trim(),
-      contact:(r['Client Contact']||r['Contact']||'').trim()};
+      contact:(r['Client Contact']||r['Contact']||'').trim(),
+      balCollected:(r['Balance Collected']||r['balance collected']||'').trim()};
   }).filter(o=>o.total>0&&o.date&&o.client&&o.client.length>1
     &&!o.client.toLowerCase().startsWith('test')
     &&!o.client.toLowerCase().startsWith('hxtest'));
@@ -1278,10 +1279,10 @@ function renderBalance(){
       +'<td class="td-mono" style="font-size:11px;color:var(--text3)">'+( o.orderId||'—')+'</td>'
       +'<td class="td-name">'+o.client+'</td>'
       +'<td style="font-size:11px;color:var(--text3)">'+o.contact+'</td>'
-      +'<td style="font-size:11px;color:var(--text2)">'+o.frame+'</td>'
       +'<td class="td-amt">'+rm(o.total)+'</td>'
       +'<td style="color:var(--green);font-family:monospace;font-size:12px">'+rm(o.dep)+'</td>'
       +'<td style="color:#f87171;font-family:monospace;font-size:13px;font-weight:700">'+rm(o.balance)+'</td>'
+      +'<td style="font-size:12px;color:var(--text3);">'+(o.balCollected||'—')+'</td>'
       +'<td>'+statusBadge+'</td>'
       +'<td>'+sb(o.src)+'</td>'
       +'<td style="font-size:11px">'+spPhoto+(o.sp||'—')+'</td>'
