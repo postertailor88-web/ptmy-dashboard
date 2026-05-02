@@ -1193,14 +1193,16 @@ function renderDayAnalysis(){
 /* ── BALANCE ── */
 function renderBalance(){
   // Filter: Payment=Deposit AND balance > 0 AND NOT already collected
-  const COLLECTED_KEYWORDS=['pickup n collected','pick up n collected','pickedup','collected','balance collected'];
+  const COLLECTED_KEYWORDS=['pickup n collected','pick up n collected','pickedup n collected','collected'];
   let orders=ALL.filter(o=>{
     if(o.pay!=='Deposit') return false;
     if(o.balance<=0) return false;
+    // Exclude if Balance Collected column (col T) says already collected
+    const balCol=(o.balCollected||'').toLowerCase();
+    if(COLLECTED_KEYWORDS.some(k=>balCol.includes(k))) return false;
     // Exclude if remarks say already collected
     const rem=(o.remarks||'').toLowerCase();
     if(COLLECTED_KEYWORDS.some(k=>rem.includes(k))) return false;
-    // Also exclude based on Balance Collected column if available
     return true;
   });
 
