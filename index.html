@@ -351,9 +351,13 @@ tbody td{padding:8px 12px;white-space:nowrap}
       <option value="date_desc">Newest first</option>
       <option value="bal_desc">Highest balance</option>
     </select>
-    <div style="margin-left:12px;font-size:11px;color:var(--text3)">
-      🔴 Red status = Pick Up (shipped, balance not collected)
-    </div>
+    <div class="sep"></div>
+    <span class="tlabel">Status</span>
+    <button class="chip a-teal" data-bst="all" onclick="setBalSt('all')">All</button>
+    <button class="chip" data-bst="Making" onclick="setBalSt('Making')" style="color:#7baaf7;border-color:rgba(91,141,238,0.3)">Making</button>
+    <button class="chip" data-bst="PrintArrived" onclick="setBalSt('PrintArrived')" style="color:#34c77b;border-color:rgba(52,199,123,0.3)">PrintArrived</button>
+    <button class="chip" data-bst="Output" onclick="setBalSt('Output')" style="color:#fbbf24;border-color:rgba(250,204,21,0.3)">Output</button>
+    <button class="chip" data-bst="Pick Up" onclick="setBalSt('Pick Up')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">Pick Up 🔴</button>
   </div>
   <!-- Table -->
   <div class="tcard">
@@ -422,7 +426,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
 
 <script>
 const CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vQlC6n9OmpmwrL24PYzSOPbrEcaupf9pNJzCcpdARonmMbJlf0KZuvQk8jnnLlmkn1pi-tvCaZVAYM_/pub?gid=1579074762&single=true&output=csv';
-let ALL=[], CH={}, srcF='all', pp='all', os='all', dayMetric='revenue';
+let ALL=[], CH={}, srcF='all', pp='all', os='all', dayMetric='revenue', balSt='all';
 let SGD_RATES={'latest':3.10};
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const DAYS_S=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -647,6 +651,7 @@ function filterByDropdown(orders, monthId, yearId){
 function setSrc(s){srcF=s;document.querySelectorAll('[data-src]').forEach(b=>b.classList.toggle('a-blue',b.dataset.src===s));applyFilters()}
 function setPP(p){pp=p;document.querySelectorAll('[data-pp]').forEach(b=>b.classList.toggle('a-teal',b.dataset.pp===p));renderOrders()}
 function setOS(s){os=s;document.querySelectorAll('[data-os]').forEach(b=>b.classList.toggle('a-teal',b.dataset.os===s));renderOrders()}
+function setBalSt(s){balSt=s;document.querySelectorAll('[data-bst]').forEach(b=>b.classList.toggle('a-teal',b.dataset.bst===s));renderBalance();}
 function setDayMetric(m){dayMetric=m;document.querySelectorAll('[data-dm]').forEach(b=>b.classList.toggle('a-teal',b.dataset.dm===m));renderDayAnalysis()}
 function applyFilters(){try{renderOverview();}catch(e){console.error('renderOverview:',e);}}
 
@@ -1185,6 +1190,9 @@ function renderBalance(){
   // Filter: Payment=Deposit AND balance > 0
   let orders=ALL.filter(o=>o.pay==='Deposit'&&o.balance>0);
 
+  // Apply status filter
+  if(balSt!=='all') orders=orders.filter(o=>o.status.toLowerCase().includes(balSt.toLowerCase()));
+
   // Apply salesperson filter
   const spFilter=document.getElementById('bal-sp-filter');
   const selSP=spFilter?spFilter.value:'all';
@@ -1232,8 +1240,15 @@ function renderBalance(){
   document.getElementById('bal-tbody').innerHTML=orders.map(o=>{
     const shipped=isShipped(o);
     const rowStyle='';
-    const statusBadge=shipped
+    const s=o.status.toLowerCase();
+    const statusBadge=s.includes('pick up')
       ?'<span style="background:rgba(239,68,68,0.25);color:#f87171;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;border:1px solid rgba(239,68,68,0.4)">'+o.status+'</span>'
+      :s.includes('making')
+      ?'<span style="background:rgba(91,141,238,0.2);color:#7baaf7;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid rgba(91,141,238,0.3)">'+o.status+'</span>'
+      :s.includes('printarrived')
+      ?'<span style="background:rgba(52,199,123,0.2);color:#34c77b;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid rgba(52,199,123,0.3)">'+o.status+'</span>'
+      :s.includes('output')
+      ?'<span style="background:rgba(250,204,21,0.15);color:#fbbf24;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid rgba(250,204,21,0.3)">'+o.status+'</span>'
       :'<span style="background:rgba(100,100,120,0.15);color:#8b90a0;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500">'+o.status+'</span>';
     const spCfg=SP_CONFIG[o.sp]||{color:'#5b8dee'};
     const spPhoto=spCfg.photo?'<img src="'+spCfg.photo+'" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;border:1.5px solid '+spCfg.color+'">':'';
