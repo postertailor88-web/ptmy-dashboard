@@ -424,12 +424,13 @@ tbody td{padding:8px 12px;white-space:nowrap}
       <span class="thead-title">Orders</span>
       <span class="thead-count" id="o-count">—</span>
       <div style="display:flex;gap:8px;margin-left:auto">
+        <button onclick="resetColWidths()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#8b90a0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif" title="Reset column widths">↺ Reset Cols</button>
         <button onclick="exportCSV()" style="background:rgba(52,199,123,.12);border:1px solid rgba(52,199,123,.3);color:#34c77b;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export CSV</button>
         <button onclick="exportExcel()" style="background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:#7ba7f5;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export Excel</button>
       </div>
     </div>
     <div id="o-summary"></div>
-    <div class="twrap"><table><colgroup>
+    <div class="twrap"><table id="orders-table"><colgroup id="orders-colgroup">
   <col style="width:90px">
   <col style="width:65px">
   <col style="width:150px">
@@ -444,7 +445,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
   <col style="width:110px">
   <col style="min-width:130px;width:auto">
 </colgroup>
-<thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Phone</th><th>Address</th><th>Status</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Frame</th><th>Remarks</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
+<thead id="orders-thead"><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Phone</th><th>Address</th><th>Status</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Frame</th><th>Remarks</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
   </div>
 </div>
 </div>
@@ -1409,6 +1410,91 @@ loadData();
     });
   });
 })();
+
+/* ── Column resize system ── */
+const COL_STORAGE_KEY='ptmy_col_widths';
+const DEFAULT_WIDTHS=[90,65,150,105,220,95,105,100,100,72,60,110,160];
+
+function saveColWidths(){
+  const cols=document.querySelectorAll('#orders-colgroup col');
+  const widths=[...cols].map(c=>parseInt(c.style.width)||0);
+  localStorage.setItem(COL_STORAGE_KEY,JSON.stringify(widths));
+}
+
+function applyColWidths(widths){
+  const cols=document.querySelectorAll('#orders-colgroup col');
+  cols.forEach((col,i)=>{
+    if(widths[i]) col.style.width=widths[i]+'px';
+  });
+}
+
+function resetColWidths(){
+  localStorage.removeItem(COL_STORAGE_KEY);
+  applyColWidths(DEFAULT_WIDTHS);
+}
+
+function initColResize(){
+  const thead=document.getElementById('orders-thead');
+  if(!thead)return;
+  const ths=thead.querySelectorAll('th');
+  const s=document.createElement('style');
+  s.textContent=`
+    #orders-thead th{position:relative;user-select:none}
+    .col-resize-handle{
+      position:absolute;right:0;top:0;bottom:0;width:6px;
+      cursor:col-resize;z-index:10;background:transparent;transition:background .15s;
+    }
+    .col-resize-handle:hover,.col-resize-handle.dragging{background:rgba(91,141,238,0.6);}
+    #orders-table{table-layout:fixed;}
+  `;
+  document.head.appendChild(s);
+  try{
+    const saved=JSON.parse(localStorage.getItem(COL_STORAGE_KEY));
+    if(saved&&saved.length) applyColWidths(saved);
+    else applyColWidths(DEFAULT_WIDTHS);
+  }catch(e){ applyColWidths(DEFAULT_WIDTHS); }
+  ths.forEach((th,i)=>{
+    const handle=document.createElement('div');
+    handle.className='col-resize-handle';
+    th.appendChild(handle);
+    let startX,startW,col;
+    handle.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      startX=e.clientX;
+      col=document.querySelectorAll('#orders-colgroup col')[i];
+      startW=parseInt(col.style.width)||th.offsetWidth;
+      handle.classList.add('dragging');
+      document.body.style.cursor='col-resize';
+      document.body.style.userSelect='none';
+      function onMove(e){
+        const diff=e.clientX-startX;
+        const newW=Math.max(40,startW+diff);
+        col.style.width=newW+'px';
+      }
+      function onUp(){
+        handle.classList.remove('dragging');
+        document.body.style.cursor='';
+        document.body.style.userSelect='';
+        saveColWidths();
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+      }
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+  });
+}
+
+let _colResizeInited=false;
+const _origRenderOrders=renderOrders;
+renderOrders=function(){
+  _origRenderOrders.apply(this,arguments);
+  if(!_colResizeInited){
+    initColResize();
+    _colResizeInited=true;
+  }
+};
+
 </script>
 </body>
 </html>
