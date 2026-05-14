@@ -381,7 +381,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
   </div>  <!-- Table -->
   <div class="tcard">
     <div class="thead-bar"><span class="thead-title">Customers with Outstanding Balance</span><span class="thead-count" id="bal-tcount">—</span></div>
-    <div class="twrap"><table><thead><tr>
+    <div class="twrap" style="overflow-x:hidden"><table style="table-layout:fixed;width:100%"><thead><tr>
       <th>Date</th><th>Order ID</th><th>Client</th><th>Contact</th>
       <th>Order Total</th><th>Deposited</th><th>Balance Due</th><th>Bal. Collected</th>
       <th>Status</th><th>Source</th><th>Salesperson</th>
@@ -436,7 +436,22 @@ tbody td{padding:8px 12px;white-space:nowrap}
       </div>
     </div>
     <div id="o-summary"></div>
-    <div class="twrap"><table><thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Phone</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Status</th><th>Remarks</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
+    <div class="twrap"><table><colgroup>
+  <col style="width:88px"> <!-- Date -->
+  <col style="width:62px"> <!-- Order ID -->
+  <col style="width:130px"><!-- Client -->
+  <col style="width:90px"> <!-- Phone -->
+  <col style="width:90px"> <!-- Frame -->
+  <col style="width:95px"> <!-- Total -->
+  <col style="width:88px"> <!-- Deposited -->
+  <col style="width:88px"> <!-- Balance -->
+  <col style="width:68px"> <!-- Payment -->
+  <col style="width:58px"> <!-- Source -->
+  <col style="width:85px"> <!-- Status -->
+  <col style="width:1fr">  <!-- Remarks - takes remaining space -->
+  <col style="width:60px"> <!-- Invoice -->
+</colgroup>
+<thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Phone</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Status</th><th>Remarks</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
   </div>
 </div>
 </div>
@@ -1387,9 +1402,9 @@ function renderOrders(){
 
   document.getElementById('o-tbody').innerHTML=orders.map(o=>`
     <tr>
-      <td class="td-mono td-dim">${o.dateStr}</td>
-      <td class="td-mono" style="color:var(--text3);font-size:11px">${o.orderId||'—'}</td>
-      <td class="td-name">${o.client||'—'}</td>
+      <td class="td-mono td-dim" style="font-size:11px">${o.dateStr}</td>
+      <td class="td-mono" style="color:var(--text3);font-size:10px">${o.orderId||'—'}</td>
+      <td class="td-name" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>
       <td style="color:var(--text3);font-size:11px;font-family:monospace">${o.contact||'—'}</td>
       <td style="color:var(--text2);font-size:11px">${o.frame||'—'}</td>
       <td class="td-amt">
@@ -1409,14 +1424,14 @@ function renderOrders(){
       <td>${sb(o.src)}</td>
       <td>
         ${(()=>{const s=(o.status||'').toLowerCase();
-          if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
+          if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
           if(s.includes('making'))return'<span style="background:rgba(91,141,238,0.2);color:#7baaf7;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
           if(s.includes('output'))return'<span style="background:rgba(250,204,21,0.15);color:#fbbf24;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
           if(s.includes('printarrived'))return'<span style="background:rgba(52,199,123,0.2);color:#34c77b;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
           return o.status?'<span style="background:rgba(100,100,120,0.15);color:#8b90a0;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>':'—';
         })()}
       </td>
-      <td style="font-size:10px;color:var(--text3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.remarks||''}">${o.remarks||'—'}</td>
+      <td style="font-size:10px;color:var(--text3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default" title="${o.remarks||''}">${o.remarks?'<span title="'+o.remarks+'">'+o.remarks.slice(0,30)+(o.remarks.length>30?'…':'')+'</span>':'—'}</td>
       <td class="td-mono td-dim" style="font-size:10px">${o.invoice||'—'}</td>
     </tr>`).join('')
     ||'<tr><td colspan="9" class="no-data">No orders found</td></tr>';
