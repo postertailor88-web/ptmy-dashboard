@@ -1468,7 +1468,7 @@ function getOrderedRow(o, sb){
     orderid:`<td class="td-mono" style="color:var(--text3);font-size:10px">${o.orderId||'—'}</td>`,
     client: `<td class="td-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>`,
     phone:  `<td style="color:var(--text2);font-size:11px;font-family:monospace;padding-right:6px">${o.contact||'—'}</td>`,
-    address:`<td style="color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px" title="${o.address||''}">${o.address?o.address.slice(0,40)+(o.address.length>40?'…':''):'—'}</td>`,
+    address:`<td style="color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px;cursor:default" onmouseenter="showAddrTip(event,this.getAttribute('data-addr'))" onmouseleave="hideAddrTip()" data-addr="${(o.address||'')}"> ${o.address?o.address.slice(0,40)+(o.address.length>40?'…':'')+'':'-'}</td>`,
     status: `<td>${(()=>{const s=(o.status||'').toLowerCase();
       if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
       if(s.includes('making'))return'<span style="background:rgba(91,141,238,0.2);color:#7baaf7;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
@@ -1511,6 +1511,15 @@ function initColSystem(){
     }
     .col-resize-handle:hover,.col-resize-handle.resizing{background:rgba(91,141,238,0.7);}
     .col-hint{font-size:9px;color:var(--text3);margin-left:6px;opacity:0.6;font-weight:400;letter-spacing:0;}
+    .addr-tooltip{
+      position:fixed;z-index:9999;
+      background:#1a1d26;border:1px solid rgba(91,141,238,0.4);
+      color:#e2e4e9;font-size:12px;line-height:1.6;
+      padding:8px 12px;border-radius:8px;
+      max-width:340px;word-break:break-word;white-space:normal;
+      box-shadow:0 8px 24px rgba(0,0,0,0.5);
+      pointer-events:none;opacity:0;transition:opacity .15s;
+    }
   `;
   document.head.appendChild(style);
 
@@ -1594,6 +1603,34 @@ function initColSystem(){
   });
 }
 
+</script>
+<div id="addr-tooltip" class="addr-tooltip"></div>
+<script>
+function showAddrTip(e, addr){
+  if(!addr||addr.trim()==='') return;
+  const t=document.getElementById('addr-tooltip');
+  t.textContent=addr;
+  t.style.opacity='1';
+  posAddrTip(e);
+}
+function posAddrTip(e){
+  const t=document.getElementById('addr-tooltip');
+  if(!t) return;
+  const pad=12, tw=340, th=t.offsetHeight||60;
+  let x=e.clientX+pad, y=e.clientY+pad;
+  if(x+tw>window.innerWidth) x=e.clientX-tw-pad;
+  if(y+th>window.innerHeight) y=e.clientY-th-pad;
+  t.style.left=x+'px';
+  t.style.top=y+'px';
+}
+function hideAddrTip(){
+  const t=document.getElementById('addr-tooltip');
+  if(t) t.style.opacity='0';
+}
+document.addEventListener('mousemove',function(e){
+  const t=document.getElementById('addr-tooltip');
+  if(t&&t.style.opacity==='1') posAddrTip(e);
+});
 </script>
 </body>
 </html>
