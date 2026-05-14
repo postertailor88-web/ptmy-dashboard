@@ -1469,7 +1469,7 @@ function getOrderedRow(o, sb){
     orderid:`<td class="td-mono" style="color:var(--text3);font-size:10px">${o.orderId||'—'}</td>`,
     client: `<td class="td-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>`,
     phone:  `<td style="color:var(--text2);font-size:11px;font-family:monospace;padding-right:6px">${o.contact||'—'}</td>`,
-    address:`<td style="color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px;cursor:default" onmouseenter="showAddrTip(event,this.getAttribute('data-addr'))" onmouseleave="hideAddrTip()" data-addr="${(o.address||'')}"> ${o.address?o.address.slice(0,40)+(o.address.length>40?'…':'')+'':'-'}</td>`,
+    address:`<td style="color:var(--text);font-size:11px;padding-left:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px" title="Click to expand / copy" data-addr="${(o.address||'').replace(/"/g,'&quot;')}" data-full="false" onclick="var td=this;var full=td.dataset.full==='true';if(full){td.style.whiteSpace='nowrap';td.style.overflow='hidden';td.style.textOverflow='ellipsis';td.style.maxWidth='220px';td.style.background='';td.style.zIndex='';td.style.position='';td.textContent=td.dataset.addr.slice(0,40)+(td.dataset.addr.length>40?'…':'');td.dataset.full='false';td.title='Click to expand / copy';}else{td.style.whiteSpace='normal';td.style.overflow='visible';td.style.textOverflow='unset';td.style.maxWidth='400px';td.style.background='#1a2035';td.style.position='relative';td.style.zIndex='50';td.textContent=td.dataset.addr;td.dataset.full='true';td.title='Click to collapse';}" onmouseenter="showAddrTip(event,this.getAttribute('data-addr'))" onmouseleave="hideAddrTip()">${o.address?o.address.slice(0,40)+(o.address.length>40?'…':''):'—'}</td>`,
     status: `<td>${(()=>{const s=(o.status||'').toLowerCase();
       if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
       if(s.includes('making'))return'<span style="background:rgba(91,141,238,0.2);color:#7baaf7;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
@@ -1520,6 +1520,13 @@ function initColSystem(){
       max-width:340px;word-break:break-word;white-space:normal;
       box-shadow:0 8px 24px rgba(0,0,0,0.5);
       pointer-events:none;opacity:0;transition:opacity .15s;
+    }
+    td[data-full="true"]{
+      background:#1a2035 !important;
+      border:1px solid rgba(91,141,238,0.4) !important;
+      border-radius:6px;
+      color:var(--blue2) !important;
+      box-shadow:0 4px 16px rgba(0,0,0,0.4);
     }
   `;
   document.head.appendChild(style);
