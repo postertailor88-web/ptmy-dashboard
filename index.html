@@ -437,21 +437,21 @@ tbody td{padding:8px 12px;white-space:nowrap}
     </div>
     <div id="o-summary"></div>
     <div class="twrap"><table><colgroup>
-  <col style="width:95px"> <!-- Date -->
-  <col style="width:70px"> <!-- Order ID -->
-  <col style="width:160px"><!-- Client -->
-  <col style="width:105px"><!-- Phone -->
-  <col style="width:110px"><!-- Frame -->
-  <col style="width:110px"><!-- Total -->
-  <col style="width:105px"><!-- Deposited -->
-  <col style="width:105px"><!-- Balance -->
-  <col style="width:75px"> <!-- Payment -->
-  <col style="width:65px"> <!-- Source -->
-  <col style="width:95px"> <!-- Status -->
-  <col style="min-width:150px;width:auto"> <!-- Remarks -->
-  <col style="width:70px"> <!-- Invoice -->
+  <col style="width:90px">  <!-- Date -->
+  <col style="width:65px">  <!-- Order ID -->
+  <col style="width:150px"> <!-- Client -->
+  <col style="width:100px"> <!-- Phone -->
+  <col style="width:180px"> <!-- Address -->
+  <col style="width:100px"> <!-- Frame -->
+  <col style="width:105px"> <!-- Total -->
+  <col style="width:100px"> <!-- Deposited -->
+  <col style="width:100px"> <!-- Balance -->
+  <col style="width:72px">  <!-- Payment -->
+  <col style="width:60px">  <!-- Source -->
+  <col style="width:90px">  <!-- Status -->
+  <col style="min-width:130px;width:auto"> <!-- Remarks -->
 </colgroup>
-<thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Phone</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Status</th><th>Remarks</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
+<thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Phone</th><th>Address</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Status</th><th>Remarks</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
   </div>
 </div>
 </div>
@@ -1385,7 +1385,7 @@ function renderComparison(){
 function renderOrders(){
   const q=(document.getElementById('q').value||'').toLowerCase();
   let orders=filterByDropdown(ALL,'ord-month','ord-year');
-  if(q)orders=orders.filter(o=>o.client.toLowerCase().includes(q));
+  if(q)orders=orders.filter(o=>o.client.toLowerCase().includes(q)||(o.contact||'').includes(q)||(o.orderId||'').toLowerCase().includes(q));
   if(pp!=='all')orders=orders.filter(o=>o.pay===pp);
   if(os!=='all')orders=orders.filter(o=>o.src===os);
   orders.sort((a,b)=>b.date-a.date);
@@ -1404,8 +1404,9 @@ function renderOrders(){
     <tr>
       <td class="td-mono td-dim" style="font-size:11px">${o.dateStr}</td>
       <td class="td-mono" style="color:var(--text3);font-size:10px">${o.orderId||'—'}</td>
-      <td class="td-name" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>
+      <td class="td-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>
       <td style="color:var(--text3);font-size:11px;font-family:monospace">${o.contact||'—'}</td>
+      <td style="color:var(--text3);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address||''}">${o.address?o.address.slice(0,28)+(o.address.length>28?'…':''):'—'}</td>
       <td style="color:var(--text2);font-size:11px">${o.frame||'—'}</td>
       <td class="td-amt">
         ${o.isSGD
@@ -1432,7 +1433,6 @@ function renderOrders(){
         })()}
       </td>
       <td style="font-size:10px;color:var(--text3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default" title="${o.remarks||''}">${o.remarks?'<span title="'+o.remarks+'">'+o.remarks.slice(0,30)+(o.remarks.length>30?'…':'')+'</span>':'—'}</td>
-      <td class="td-mono td-dim" style="font-size:10px">${o.invoice||'—'}</td>
     </tr>`).join('')
     ||'<tr><td colspan="9" class="no-data">No orders found</td></tr>';
 
@@ -1445,41 +1445,18 @@ function renderOrders(){
   const sumEl=document.getElementById('o-summary');
   if(sumEl){
     // Render summary first, then position cells by reading actual header cell positions
-    sumEl.innerHTML=`<div style="background:var(--surface2);border-bottom:2px solid var(--border2);border-radius:var(--r) var(--r) 0 0;padding:10px 0;position:relative;min-height:48px">
-      <div id="sum-label" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap">
+    sumEl.innerHTML=`<div style="display:flex;align-items:center;gap:24px;background:var(--surface2);border-bottom:2px solid var(--border2);border-radius:var(--r) var(--r) 0 0;padding:10px 16px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:600;color:var(--text2)">
         ${orders.length} orders &nbsp;·&nbsp;
         <span style="color:var(--green)">${paidCount} paid</span> &nbsp;·&nbsp;
         <span style="color:var(--amber)">${depCount} deposit</span>
-      </div>
-      <div id="sum-rev"  style="position:absolute;top:6px"></div>
-      <div id="sum-dep"  style="position:absolute;top:6px"></div>
-      <div id="sum-bal"  style="position:absolute;top:6px"></div>
+      </span>
+      <span style="margin-left:auto;display:flex;gap:24px;align-items:center">
+        <span><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:6px">Revenue</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--blue2)">${rm(totalRev)}</span></span>
+        <span><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:6px">Deposited</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--green)">${rm(totalDep)}</span></span>
+        <span><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:6px">Balance</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--red)">${rm(totalBal)}</span></span>
+      </span>
     </div>`;
-
-    // After DOM renders, position each cell under the correct header
-    requestAnimationFrame(()=>{
-      const tbl=document.querySelector('#o-tbody').closest('table');
-      if(!tbl)return;
-      const ths=tbl.querySelectorAll('thead th');
-      const wrap=sumEl.getBoundingClientRect();
-      // th indices: 0=Date,1=OrderID,2=Client,3=Frame,4=Total,5=Deposited,6=Balance
-      const pos=(i)=>{
-        const r=ths[i].getBoundingClientRect();
-        return{left:r.left-wrap.left, width:r.width};
-      };
-      const mkCell=(elId,label,val,color)=>{
-        const el=document.getElementById(elId);
-        if(!el)return;
-        const p=pos(parseInt(elId==='sum-rev'?4:elId==='sum-dep'?5:6));
-        el.style.left=p.left+'px';
-        el.style.width=p.width+'px';
-        el.innerHTML='<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:0 12px">'+label+'</div>'
-          +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;color:'+color+';padding:2px 12px">'+val+'</div>';
-      };
-      mkCell('sum-rev','Revenue',rm(totalRev),'var(--blue2)');
-      mkCell('sum-dep','Deposited',rm(totalDep),'var(--green)');
-      mkCell('sum-bal','Balance',rm(totalBal),'var(--red)');
-    });
   }
 }
 
@@ -1487,7 +1464,7 @@ function renderOrders(){
 function getFilteredOrders(){
   const q=(document.getElementById('q').value||'').toLowerCase();
   let orders=filterByDropdown(ALL,'ord-month','ord-year');
-  if(q)orders=orders.filter(o=>o.client.toLowerCase().includes(q));
+  if(q)orders=orders.filter(o=>o.client.toLowerCase().includes(q)||(o.contact||'').includes(q)||(o.orderId||'').toLowerCase().includes(q));
   if(pp!=='all')orders=orders.filter(o=>o.pay===pp);
   if(os!=='all')orders=orders.filter(o=>o.src===os);
   return orders.sort((a,b)=>b.date-a.date);
