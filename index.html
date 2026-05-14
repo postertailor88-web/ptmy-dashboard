@@ -434,17 +434,17 @@ tbody td{padding:8px 12px;white-space:nowrap}
   <col style="width:65px">
   <col style="width:150px">
   <col style="width:100px">
-  <col style="width:180px">
-  <col style="width:100px">
+  <col style="width:200px">
+  <col style="width:95px">
   <col style="width:105px">
   <col style="width:100px">
   <col style="width:100px">
   <col style="width:72px">
   <col style="width:60px">
-  <col style="width:90px">
+  <col style="width:110px">
   <col style="min-width:130px;width:auto">
 </colgroup>
-<thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Phone</th><th>Address</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Status</th><th>Remarks</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
+<thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Phone</th><th>Address</th><th>Status</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Frame</th><th>Remarks</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
   </div>
 </div>
 </div>
@@ -1200,8 +1200,16 @@ function renderOrders(){
       <td class="td-mono" style="color:var(--text3);font-size:10px">${o.orderId||'—'}</td>
       <td class="td-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>
       <td style="color:var(--text2);font-size:11px;font-family:monospace">${o.contact||'—'}</td>
-      <td style="color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address||''}">${o.address?o.address.slice(0,28)+(o.address.length>28?'…':''):'—'}</td>
-      <td style="color:var(--text);font-size:11px">${o.frame||'—'}</td>
+      <td style="color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address||''}">${o.address?o.address.slice(0,40)+(o.address.length>40?'…':''):'—'}</td>
+      <td>
+        ${(()=>{const s=(o.status||'').toLowerCase();
+          if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
+          if(s.includes('making'))return'<span style="background:rgba(91,141,238,0.2);color:#7baaf7;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
+          if(s.includes('output'))return'<span style="background:rgba(250,204,21,0.15);color:#fbbf24;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
+          if(s.includes('printarrived'))return'<span style="background:rgba(52,199,123,0.2);color:#34c77b;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
+          return o.status?'<span style="background:rgba(100,100,120,0.15);color:#8b90a0;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>':'—';
+        })()}
+      </td>
       <td class="td-amt">
         ${o.isSGD
           ? `<div style="line-height:1.6">
@@ -1217,18 +1225,10 @@ function renderOrders(){
       <td class="${o.balance?'td-bal':'td-dim'}">${o.balance?rm(o.balance):'—'}</td>
       <td>${o.pay==='FullyPaid'?'<span class="badge b-paid">Paid</span>':'<span class="badge b-dep">Deposit</span>'}</td>
       <td>${sb(o.src)}</td>
-      <td>
-        ${(()=>{const s=(o.status||'').toLowerCase();
-          if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
-          if(s.includes('making'))return'<span style="background:rgba(91,141,238,0.2);color:#7baaf7;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
-          if(s.includes('output'))return'<span style="background:rgba(250,204,21,0.15);color:#fbbf24;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
-          if(s.includes('printarrived'))return'<span style="background:rgba(52,199,123,0.2);color:#34c77b;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
-          return o.status?'<span style="background:rgba(100,100,120,0.15);color:#8b90a0;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>':'—';
-        })()}
-      </td>
+      <td style="color:var(--text);font-size:11px">${o.frame||'—'}</td>
       <td style="font-size:10px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default" title="${o.remarks||''}">${o.remarks?'<span title="'+o.remarks+'">'+o.remarks.slice(0,30)+(o.remarks.length>30?'…':'')+'</span>':'—'}</td>
     </tr>`).join('')
-    ||'<tr><td colspan="9" class="no-data">No orders found</td></tr>';
+    ||'<tr><td colspan="13" class="no-data">No orders found</td></tr>';
 
   const totalRev=orders.reduce((s,o)=>s+o.total,0);
   const totalDep=orders.reduce((s,o)=>s+o.dep,0);
