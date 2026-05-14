@@ -424,8 +424,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
       <span class="thead-title">Orders</span>
       <span class="thead-count" id="o-count">—</span>
       <div style="display:flex;gap:8px;margin-left:auto">
-        <button onclick="resetColWidths()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#8b90a0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif" title="Reset column widths">↺ Reset Cols</button>
-        <button onclick="exportCSV()" style="background:rgba(52,199,123,.12);border:1px solid rgba(52,199,123,.3);color:#34c77b;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export CSV</button>
+        <button onclick="resetColWidths()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#8b90a0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif" title="Reset column widths">↺ Reset Cols</button>        <button onclick="exportCSV()" style="background:rgba(52,199,123,.12);border:1px solid rgba(52,199,123,.3);color:#34c77b;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export CSV</button>
         <button onclick="exportExcel()" style="background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:#7ba7f5;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⬇ Export Excel</button>
       </div>
     </div>
@@ -1414,13 +1413,13 @@ function loadColState(){
   }catch(e){}
 }
 
-function resetColState(){
+function resetColWidths(){
   colOrder=COL_DEFS.map((_,i)=>i);
   colWidths=COL_DEFS.map(c=>c.width);
   localStorage.removeItem(COL_ORDER_KEY);
   localStorage.removeItem(COL_WIDTHS_KEY);
   applyColState();
-  renderOrders();
+  _origRenderOrders();
 }
 
 function applyColState(){
@@ -1447,6 +1446,9 @@ function applyColState(){
 // Override renderOrders to reorder td cells according to colOrder
 const _origRenderOrders=renderOrders;
 let _colInited=false;
+
+// Load saved state immediately so colOrder/colWidths are correct before first renderOrders
+loadColState();
 
 function getOrderedRow(o, sb){
   const cells={
@@ -1483,7 +1485,6 @@ renderOrders=function(){
 };
 
 function initColSystem(){
-  loadColState();
   applyColState();
 
   const style=document.createElement('style');
