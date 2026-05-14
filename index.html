@@ -433,8 +433,8 @@ tbody td{padding:8px 12px;white-space:nowrap}
   <col style="width:90px">
   <col style="width:65px">
   <col style="width:150px">
-  <col style="width:100px">
-  <col style="width:200px">
+  <col style="width:105px">
+  <col style="width:220px">
   <col style="width:95px">
   <col style="width:105px">
   <col style="width:100px">
@@ -1199,8 +1199,8 @@ function renderOrders(){
       <td class="td-mono td-dim" style="font-size:11px">${o.dateStr}</td>
       <td class="td-mono" style="color:var(--text3);font-size:10px">${o.orderId||'—'}</td>
       <td class="td-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>
-      <td style="color:var(--text2);font-size:11px;font-family:monospace">${o.contact||'—'}</td>
-      <td style="color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address||''}">${o.address?o.address.slice(0,40)+(o.address.length>40?'…':''):'—'}</td>
+      <td style="color:var(--text2);font-size:11px;font-family:monospace;padding-right:6px">${o.contact||'—'}</td>
+      <td style="color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px" title="${o.address||''}">${o.address?o.address.slice(0,40)+(o.address.length>40?'…':''):'—'}</td>
       <td>
         ${(()=>{const s=(o.status||'').toLowerCase();
           if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
