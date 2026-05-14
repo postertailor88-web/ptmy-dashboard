@@ -1226,7 +1226,7 @@ function renderOrders(){
           return o.status?'<span style="background:rgba(100,100,120,0.15);color:#8b90a0;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>':'—';
         })()}
       </td>
-      <td style="font-size:10px;color:var(--text3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default" title="${o.remarks||''}">${o.remarks?'<span title="'+o.remarks+'">'+o.remarks.slice(0,30)+(o.remarks.length>30?'…':'')+'</span>':'—'}</td>
+      <td style="font-size:10px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default" title="${o.remarks||''}">${o.remarks?'<span title="'+o.remarks+'">'+o.remarks.slice(0,30)+(o.remarks.length>30?'…':'')+'</span>':'—'}</td>
     </tr>`).join('')
     ||'<tr><td colspan="9" class="no-data">No orders found</td></tr>';
 
