@@ -184,7 +184,10 @@ tbody td{padding:8px 12px;white-space:nowrap}
   <div class="tab" draggable="true" data-page="balance" onclick="showPage('balance')">💰 Outstanding Balance</div>
   <div class="tab" draggable="true" data-page="comparison" onclick="showPage('comparison')">📈 Monthly Comparison</div>
   <div class="tab" draggable="true" data-page="orders" onclick="showPage('orders')">📋 All Orders</div>
-  <div class="tab" style="color:var(--teal);border-bottom-color:transparent" onclick="window.open('https://chatshero8-afk.github.io/poster-completed-scan/history.html','_blank')">🖨️ Poster Scan ↗</div>
+  <div class="tab" style="color:var(--teal);border-bottom-color:transparent;display:flex;align-items:center;gap:6px" onclick="window.open('https://chatshero8-afk.github.io/poster-completed-scan/history.html','_blank')">
+    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCA3NTAgNzUwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxyZWN0IHdpZHRoPSI3NTAiIGhlaWdodD0iNzUwIiBmaWxsPSJibGFjayIvPgogIDwhLS0gYmFyczogb3V0ZXIgc2hvcnQsIGlubmVyIHRhbGwsIGNlbnRlciBkYXJrIC0tPgogIDxyZWN0IHg9IjYwIiAgeT0iMTcwIiB3aWR0aD0iOTAiIGhlaWdodD0iMzcwIiByeD0iOCIgZmlsbD0id2hpdGUiLz4KICA8cmVjdCB4PSIyMDAiIHk9IjEwMCIgd2lkdGg9IjkwIiBoZWlnaHQ9IjQ0MCIgcng9IjgiIGZpbGw9IndoaXRlIi8+CiAgPHJlY3QgeD0iMzMwIiB5PSI2MCIgIHdpZHRoPSI5MCIgaGVpZ2h0PSI0OTAiIHJ4PSI4IiBmaWxsPSIjMWExYTFhIi8+CiAgPHJlY3QgeD0iNDYwIiB5PSIxMDAiIHdpZHRoPSI5MCIgaGVpZ2h0PSI0NDAiIHJ4PSI4IiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjYwMCIgeT0iMTcwIiB3aWR0aD0iOTAiIGhlaWdodD0iMzcwIiByeD0iOCIgZmlsbD0id2hpdGUiLz4KICA8IS0tIHRleHQgLS0+CiAgPHRleHQgeD0iMzc1IiB5PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjaywgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI4OCIgZm9udC13ZWlnaHQ9IjkwMCIgZmlsbD0id2hpdGUiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iOCIgcGFpbnQtb3JkZXI9InN0cm9rZSI+UE9TVEVSIFRBSUxPUjwvdGV4dD4KPC9zdmc+" width="18" height="18" style="border-radius:3px;flex-shrink:0" alt="PT">
+    Poster Scan ↗
+  </div>
 </div>
 
 <div id="loading"><div class="spinner"></div><div class="loading-text">Fetching live data…</div></div>
@@ -1469,7 +1472,7 @@ function getOrderedRow(o, sb){
     orderid:`<td class="td-mono" style="color:var(--text3);font-size:10px">${o.orderId||'—'}</td>`,
     client: `<td class="td-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>`,
     phone:  `<td style="color:var(--text2);font-size:11px;font-family:monospace;padding-right:6px">${o.contact||'—'}</td>`,
-    address:`<td style="color:var(--text);font-size:11px;padding-left:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px" title="Click to expand / copy" data-addr="${(o.address||'').replace(/"/g,'&quot;')}" data-full="false" onclick="var td=this;var full=td.dataset.full==='true';if(full){td.style.whiteSpace='nowrap';td.style.overflow='hidden';td.style.textOverflow='ellipsis';td.style.maxWidth='220px';td.style.background='';td.style.zIndex='';td.style.position='';td.textContent=td.dataset.addr.slice(0,40)+(td.dataset.addr.length>40?'…':'');td.dataset.full='false';td.title='Click to expand / copy';}else{td.style.whiteSpace='normal';td.style.overflow='visible';td.style.textOverflow='unset';td.style.maxWidth='400px';td.style.background='#1a2035';td.style.position='relative';td.style.zIndex='50';td.textContent=td.dataset.addr;td.dataset.full='true';td.title='Click to collapse';}" onmouseenter="showAddrTip(event,this.getAttribute('data-addr'))" onmouseleave="hideAddrTip()">${o.address?o.address.slice(0,40)+(o.address.length>40?'…':''):'—'}</td>`,
+    address:`<td style="color:var(--text);font-size:11px;padding-left:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px" title="Click to copy address" data-addr="${(o.address||'').replace(/"/g,'&quot;')}" onclick="copyAddress(this)" onmouseenter="showAddrTip(event,this.getAttribute('data-addr'))" onmouseleave="hideAddrTip()">${o.address?o.address.slice(0,40)+(o.address.length>40?'…':''):'—'}</td>`,
     status: `<td>${(()=>{const s=(o.status||'').toLowerCase();
       if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
       if(s.includes('making'))return'<span style="background:rgba(91,141,238,0.2);color:#7baaf7;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
@@ -1527,8 +1530,7 @@ function initColSystem(){
       border-radius:6px;
       color:var(--blue2) !important;
       box-shadow:0 4px 16px rgba(0,0,0,0.4);
-    }
-  `;
+    }  `;
   document.head.appendChild(style);
 
   const ths=document.querySelectorAll('#orders-thead th');
@@ -1614,6 +1616,44 @@ function initColSystem(){
 </script>
 <div id="addr-tooltip" class="addr-tooltip"></div>
 <script>
+function copyAddress(td){
+  const addr=td.getAttribute('data-addr');
+  if(!addr||addr.trim()==='')return;
+  hideAddrTip();
+  navigator.clipboard.writeText(addr).then(()=>{
+    showToast('📋 Copied: '+addr);
+  }).catch(()=>{
+    // fallback for older browsers
+    const el=document.createElement('textarea');
+    el.value=addr;
+    el.style.position='fixed';el.style.opacity='0';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast('📋 Copied: '+addr);
+  });
+}
+
+let _toastTimer=null;
+function showToast(msg){
+  let t=document.getElementById('copy-toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='copy-toast';
+    t.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a2035;border:1px solid rgba(45,212,191,0.5);color:#2dd4bf;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:99999;opacity:0;transition:opacity .2s,transform .2s;max-width:90vw;text-align:center;word-break:break-all;';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.opacity='1';
+  t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>{
+    t.style.opacity='0';
+    t.style.transform='translateX(-50%) translateY(20px)';
+  },2500);
+}
+
 function showAddrTip(e, addr){
   if(!addr||addr.trim()==='') return;
   const t=document.getElementById('addr-tooltip');
