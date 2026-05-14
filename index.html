@@ -625,17 +625,29 @@ function populateDropdowns(){
   ALL.forEach(o=>{if(o.date){years.add(o.date.getFullYear());months.add(o.date.getMonth())}});
   const ys=[...years].sort((a,b)=>b-a);
   const ms=[...months].sort((a,b)=>a-b);
+  const now=new Date();
+  const curMonth=now.getMonth();
+  const curYear=now.getFullYear();
+
+  // Overview + Salesperson + Day Analysis → default to current month/year
+  // Orders → keep 'all' as default
   ['sel-year','sp-sel-year','da-sel-year','ord-year'].forEach(id=>{
     const el=document.getElementById(id);
+    const isOrders=id==='ord-year';
     const cur=el.value;
     el.innerHTML='<option value="all">All years</option>'+ys.map(y=>`<option value="${y}">${y}</option>`).join('');
-    el.value=cur||'all';
+    if(cur&&cur!=='all') el.value=cur;
+    else if(!isOrders&&ys.includes(curYear)) el.value=curYear;
+    else el.value='all';
   });
   ['sel-month','sp-sel-month','da-sel-month','ord-month'].forEach(id=>{
     const el=document.getElementById(id);
+    const isOrders=id==='ord-month';
     const cur=el.value;
     el.innerHTML='<option value="all">All months</option>'+ms.map(m=>`<option value="${m}">${MONTHS[m]}</option>`).join('');
-    el.value=cur||'all';
+    if(cur&&cur!=='all') el.value=cur;
+    else if(!isOrders&&ms.includes(curMonth)) el.value=curMonth;
+    else el.value='all';
   });
 }
 
