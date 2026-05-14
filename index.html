@@ -1195,40 +1195,7 @@ function renderOrders(){
     return`<span class="badge b-other">${s||'—'}</span>`;
   };
 
-  document.getElementById('o-tbody').innerHTML=orders.map(o=>`
-    <tr>
-      <td class="td-mono td-dim" style="font-size:11px">${o.dateStr}</td>
-      <td class="td-mono" style="color:var(--text3);font-size:10px">${o.orderId||'—'}</td>
-      <td class="td-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>
-      <td style="color:var(--text2);font-size:11px;font-family:monospace;padding-right:6px">${o.contact||'—'}</td>
-      <td style="color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px" title="${o.address||''}">${o.address?o.address.slice(0,40)+(o.address.length>40?'…':''):'—'}</td>
-      <td>
-        ${(()=>{const s=(o.status||'').toLowerCase();
-          if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
-          if(s.includes('making'))return'<span style="background:rgba(91,141,238,0.2);color:#7baaf7;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
-          if(s.includes('output'))return'<span style="background:rgba(250,204,21,0.15);color:#fbbf24;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
-          if(s.includes('printarrived'))return'<span style="background:rgba(52,199,123,0.2);color:#34c77b;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
-          return o.status?'<span style="background:rgba(100,100,120,0.15);color:#8b90a0;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>':'—';
-        })()}
-      </td>
-      <td class="td-amt">
-        ${o.isSGD
-          ? `<div style="line-height:1.6">
-              <span style="color:var(--blue2);font-family:'JetBrains Mono',monospace">RM ${Math.round(o.total).toLocaleString()}</span>
-              <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">
-                SGD ${o.totalSGD?o.totalSGD.toLocaleString():'—'} × ${(SGD_RATES['latest']||3.45).toFixed(4)}
-              </div>
-            </div>`
-          : rm(o.total)
-        }
-      </td>
-      <td class="td-ok">${o.dep?rm(o.dep):'—'}</td>
-      <td class="${o.balance?'td-bal':'td-dim'}">${o.balance?rm(o.balance):'—'}</td>
-      <td>${o.pay==='FullyPaid'?'<span class="badge b-paid">Paid</span>':'<span class="badge b-dep">Deposit</span>'}</td>
-      <td>${sb(o.src)}</td>
-      <td style="color:var(--text);font-size:11px">${o.frame||'—'}</td>
-      <td style="font-size:10px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default" title="${o.remarks||''}">${o.remarks?'<span title="'+o.remarks+'">'+o.remarks.slice(0,30)+(o.remarks.length>30?'…':'')+'</span>':'—'}</td>
-    </tr>`).join('')
+  document.getElementById('o-tbody').innerHTML=orders.map(o=>`<tr>${getOrderedRow(o,sb)}</tr>`).join('')
     ||'<tr><td colspan="13" class="no-data">No orders found</td></tr>';
 
   const totalRev=orders.reduce((s,o)=>s+o.total,0);
@@ -1411,71 +1378,200 @@ loadData();
   });
 })();
 
-/* ── Column resize system ── */
-const COL_STORAGE_KEY='ptmy_col_widths';
-const DEFAULT_WIDTHS=[90,65,150,105,220,95,105,100,100,72,60,110,160];
+/* ── Column reorder + resize system ── */
+const COL_WIDTHS_KEY='ptmy_col_widths_v2';
+const COL_ORDER_KEY='ptmy_col_order_v2';
+const COL_DEFS=[
+  {key:'date',     label:'Date',       width:90},
+  {key:'orderid',  label:'Order ID',   width:65},
+  {key:'client',   label:'Client',     width:150},
+  {key:'phone',    label:'Phone',      width:105},
+  {key:'address',  label:'Address',    width:220},
+  {key:'status',   label:'Status',     width:95},
+  {key:'total',    label:'Total (RM)', width:105},
+  {key:'deposited',label:'Deposited',  width:100},
+  {key:'balance',  label:'Balance',    width:100},
+  {key:'payment',  label:'Payment',    width:72},
+  {key:'source',   label:'Source',     width:60},
+  {key:'frame',    label:'Frame',      width:110},
+  {key:'remarks',  label:'Remarks',    width:160},
+];
 
-function saveColWidths(){
-  const cols=document.querySelectorAll('#orders-colgroup col');
-  const widths=[...cols].map(c=>parseInt(c.style.width)||0);
-  localStorage.setItem(COL_STORAGE_KEY,JSON.stringify(widths));
+let colOrder=COL_DEFS.map((_,i)=>i);
+let colWidths=COL_DEFS.map(c=>c.width);
+
+function saveColState(){
+  localStorage.setItem(COL_ORDER_KEY, JSON.stringify(colOrder));
+  localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(colWidths));
 }
 
-function applyColWidths(widths){
+function loadColState(){
+  try{
+    const o=JSON.parse(localStorage.getItem(COL_ORDER_KEY));
+    const w=JSON.parse(localStorage.getItem(COL_WIDTHS_KEY));
+    if(o&&o.length===COL_DEFS.length) colOrder=o;
+    if(w&&w.length===COL_DEFS.length) colWidths=w;
+  }catch(e){}
+}
+
+function resetColState(){
+  colOrder=COL_DEFS.map((_,i)=>i);
+  colWidths=COL_DEFS.map(c=>c.width);
+  localStorage.removeItem(COL_ORDER_KEY);
+  localStorage.removeItem(COL_WIDTHS_KEY);
+  applyColState();
+  renderOrders();
+}
+
+function applyColState(){
+  // Update colgroup
   const cols=document.querySelectorAll('#orders-colgroup col');
-  cols.forEach((col,i)=>{
-    if(widths[i]) col.style.width=widths[i]+'px';
+  colOrder.forEach((defIdx,pos)=>{
+    if(cols[pos]) cols[pos].style.width=colWidths[defIdx]+'px';
+  });
+  // Update thead labels
+  const ths=document.querySelectorAll('#orders-thead th');
+  colOrder.forEach((defIdx,pos)=>{
+    if(ths[pos]){
+      // preserve resize handle if present
+      const handle=ths[pos].querySelector('.col-resize-handle');
+      ths[pos].dataset.colidx=defIdx;
+      // set label (text node only)
+      const labelNode=[...ths[pos].childNodes].find(n=>n.nodeType===3);
+      if(labelNode) labelNode.textContent=COL_DEFS[defIdx].label;
+      else ths[pos].prepend(document.createTextNode(COL_DEFS[defIdx].label));
+    }
   });
 }
 
-function resetColWidths(){
-  localStorage.removeItem(COL_STORAGE_KEY);
-  applyColWidths(DEFAULT_WIDTHS);
+// Override renderOrders to reorder td cells according to colOrder
+const _origRenderOrders=renderOrders;
+let _colInited=false;
+
+function getOrderedRow(o, sb){
+  const cells={
+    date:   `<td class="td-mono td-dim" style="font-size:11px">${o.dateStr}</td>`,
+    orderid:`<td class="td-mono" style="color:var(--text3);font-size:10px">${o.orderId||'—'}</td>`,
+    client: `<td class="td-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.client||''}">${o.client||'—'}</td>`,
+    phone:  `<td style="color:var(--text2);font-size:11px;font-family:monospace;padding-right:6px">${o.contact||'—'}</td>`,
+    address:`<td style="color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px" title="${o.address||''}">${o.address?o.address.slice(0,40)+(o.address.length>40?'…':''):'—'}</td>`,
+    status: `<td>${(()=>{const s=(o.status||'').toLowerCase();
+      if(s.includes('pick up'))return'<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+o.status+'</span>';
+      if(s.includes('making'))return'<span style="background:rgba(91,141,238,0.2);color:#7baaf7;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
+      if(s.includes('output'))return'<span style="background:rgba(250,204,21,0.15);color:#fbbf24;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
+      if(s.includes('printarrived'))return'<span style="background:rgba(52,199,123,0.2);color:#34c77b;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>';
+      return o.status?'<span style="background:rgba(100,100,120,0.15);color:#8b90a0;padding:2px 8px;border-radius:4px;font-size:10px">'+o.status+'</span>':'—';
+    })()}</td>`,
+    total:  `<td class="td-amt">${o.isSGD?`<div style="line-height:1.6"><span style="color:var(--blue2);font-family:'JetBrains Mono',monospace">RM ${Math.round(o.total).toLocaleString()}</span><div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">SGD ${o.totalSGD?o.totalSGD.toLocaleString():'—'} × ${(SGD_RATES['latest']||3.45).toFixed(4)}</div></div>`:rm(o.total)}</td>`,
+    deposited:`<td class="td-ok">${o.dep?rm(o.dep):'—'}</td>`,
+    balance:`<td class="${o.balance?'td-bal':'td-dim'}">${o.balance?rm(o.balance):'—'}</td>`,
+    payment:`<td>${o.pay==='FullyPaid'?'<span class="badge b-paid">Paid</span>':'<span class="badge b-dep">Deposit</span>'}</td>`,
+    source: `<td>${sb(o.src)}</td>`,
+    frame:  `<td style="color:var(--text);font-size:11px">${o.frame||'—'}</td>`,
+    remarks:`<td style="font-size:10px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default" title="${o.remarks||''}">${o.remarks?'<span>'+o.remarks.slice(0,30)+(o.remarks.length>30?'…':'')+'</span>':'—'}</td>`,
+  };
+  const keys=['date','orderid','client','phone','address','status','total','deposited','balance','payment','source','frame','remarks'];
+  return colOrder.map(defIdx=>cells[keys[defIdx]]).join('');
 }
 
-function initColResize(){
-  const thead=document.getElementById('orders-thead');
-  if(!thead)return;
-  const ths=thead.querySelectorAll('th');
-  const s=document.createElement('style');
-  s.textContent=`
-    #orders-thead th{position:relative;user-select:none}
+renderOrders=function(){
+  _origRenderOrders.apply(this,arguments);
+  if(!_colInited){
+    initColSystem();
+    _colInited=true;
+  }
+};
+
+function initColSystem(){
+  loadColState();
+  applyColState();
+
+  const style=document.createElement('style');
+  style.textContent=`
+    #orders-thead th{position:relative;user-select:none;cursor:grab;}
+    #orders-thead th.col-dragging{opacity:0.4;background:rgba(91,141,238,0.15);}
+    #orders-thead th.col-drag-over{background:rgba(91,141,238,0.2);border-left:2px solid var(--blue);}
+    #orders-table{table-layout:fixed;}
     .col-resize-handle{
       position:absolute;right:0;top:0;bottom:0;width:6px;
       cursor:col-resize;z-index:10;background:transparent;transition:background .15s;
     }
-    .col-resize-handle:hover,.col-resize-handle.dragging{background:rgba(91,141,238,0.6);}
-    #orders-table{table-layout:fixed;}
+    .col-resize-handle:hover,.col-resize-handle.resizing{background:rgba(91,141,238,0.7);}
+    .col-hint{font-size:9px;color:var(--text3);margin-left:6px;opacity:0.6;font-weight:400;letter-spacing:0;}
   `;
-  document.head.appendChild(s);
-  try{
-    const saved=JSON.parse(localStorage.getItem(COL_STORAGE_KEY));
-    if(saved&&saved.length) applyColWidths(saved);
-    else applyColWidths(DEFAULT_WIDTHS);
-  }catch(e){ applyColWidths(DEFAULT_WIDTHS); }
-  ths.forEach((th,i)=>{
+  document.head.appendChild(style);
+
+  const ths=document.querySelectorAll('#orders-thead th');
+  let dragSrcPos=null;
+
+  ths.forEach((th,pos)=>{
+    th.setAttribute('draggable','true');
+    th.dataset.pos=pos;
+
+    // Add hint on first load
+    if(pos===0){
+      const hint=document.createElement('span');
+      hint.className='col-hint';
+      hint.textContent='drag to reorder';
+      th.appendChild(hint);
+      setTimeout(()=>hint.remove(), 3000);
+    }
+
+    // Drag to REORDER
+    th.addEventListener('dragstart',e=>{
+      dragSrcPos=pos;
+      setTimeout(()=>th.classList.add('col-dragging'),0);
+      e.dataTransfer.effectAllowed='move';
+    });
+    th.addEventListener('dragend',()=>{
+      th.classList.remove('col-dragging');
+      document.querySelectorAll('#orders-thead th').forEach(t=>t.classList.remove('col-drag-over'));
+      dragSrcPos=null;
+    });
+    th.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(dragSrcPos===null||dragSrcPos===pos)return;
+      document.querySelectorAll('#orders-thead th').forEach(t=>t.classList.remove('col-drag-over'));
+      th.classList.add('col-drag-over');
+    });
+    th.addEventListener('dragleave',()=>th.classList.remove('col-drag-over'));
+    th.addEventListener('drop',e=>{
+      e.preventDefault();
+      th.classList.remove('col-drag-over');
+      if(dragSrcPos===null||dragSrcPos===pos)return;
+      // Reorder colOrder array
+      const moved=colOrder.splice(dragSrcPos,1)[0];
+      colOrder.splice(pos,0,moved);
+      saveColState();
+      applyColState();
+      renderOrders();
+    });
+
+    // RESIZE handle (right edge)
     const handle=document.createElement('div');
     handle.className='col-resize-handle';
     th.appendChild(handle);
-    let startX,startW,col;
+
     handle.addEventListener('mousedown',e=>{
       e.preventDefault();
-      startX=e.clientX;
-      col=document.querySelectorAll('#orders-colgroup col')[i];
-      startW=parseInt(col.style.width)||th.offsetWidth;
-      handle.classList.add('dragging');
+      e.stopPropagation();
+      const defIdx=colOrder[pos];
+      const startX=e.clientX;
+      const startW=colWidths[defIdx];
+      handle.classList.add('resizing');
       document.body.style.cursor='col-resize';
       document.body.style.userSelect='none';
       function onMove(e){
-        const diff=e.clientX-startX;
-        const newW=Math.max(40,startW+diff);
-        col.style.width=newW+'px';
+        const newW=Math.max(40, startW+(e.clientX-startX));
+        colWidths[defIdx]=newW;
+        const cols=document.querySelectorAll('#orders-colgroup col');
+        if(cols[pos]) cols[pos].style.width=newW+'px';
       }
       function onUp(){
-        handle.classList.remove('dragging');
+        handle.classList.remove('resizing');
         document.body.style.cursor='';
         document.body.style.userSelect='';
-        saveColWidths();
+        saveColState();
         document.removeEventListener('mousemove',onMove);
         document.removeEventListener('mouseup',onUp);
       }
@@ -1484,16 +1580,6 @@ function initColResize(){
     });
   });
 }
-
-let _colResizeInited=false;
-const _origRenderOrders=renderOrders;
-renderOrders=function(){
-  _origRenderOrders.apply(this,arguments);
-  if(!_colResizeInited){
-    initColResize();
-    _colResizeInited=true;
-  }
-};
 
 </script>
 </body>
