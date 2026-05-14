@@ -381,7 +381,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
   </div>  <!-- Table -->
   <div class="tcard">
     <div class="thead-bar"><span class="thead-title">Customers with Outstanding Balance</span><span class="thead-count" id="bal-tcount">—</span></div>
-    <div class="twrap" style="overflow-x:hidden"><table style="table-layout:fixed;width:100%"><thead><tr>
+    <div class="twrap" style="overflow-x:auto"><table style="table-layout:fixed;min-width:1200px;width:100%"><thead><tr>
       <th>Date</th><th>Order ID</th><th>Client</th><th>Contact</th>
       <th>Order Total</th><th>Deposited</th><th>Balance Due</th><th>Bal. Collected</th>
       <th>Status</th><th>Source</th><th>Salesperson</th>
@@ -401,7 +401,7 @@ tbody td{padding:8px 12px;white-space:nowrap}
 
 <!-- ═══ ALL ORDERS ═══ -->
 <div class="page" id="page-orders">
-<div class="main">
+<div class="main" style="max-width:100%;padding:16px 20px">
   <div class="toolbar" style="margin-bottom:8px">
     <div class="search-wrap">
       <span class="si">🔍</span>
@@ -437,19 +437,19 @@ tbody td{padding:8px 12px;white-space:nowrap}
     </div>
     <div id="o-summary"></div>
     <div class="twrap"><table><colgroup>
-  <col style="width:88px"> <!-- Date -->
-  <col style="width:62px"> <!-- Order ID -->
-  <col style="width:130px"><!-- Client -->
-  <col style="width:90px"> <!-- Phone -->
-  <col style="width:90px"> <!-- Frame -->
-  <col style="width:95px"> <!-- Total -->
-  <col style="width:88px"> <!-- Deposited -->
-  <col style="width:88px"> <!-- Balance -->
-  <col style="width:68px"> <!-- Payment -->
-  <col style="width:58px"> <!-- Source -->
-  <col style="width:85px"> <!-- Status -->
-  <col style="width:1fr">  <!-- Remarks - takes remaining space -->
-  <col style="width:60px"> <!-- Invoice -->
+  <col style="width:95px"> <!-- Date -->
+  <col style="width:70px"> <!-- Order ID -->
+  <col style="width:160px"><!-- Client -->
+  <col style="width:105px"><!-- Phone -->
+  <col style="width:110px"><!-- Frame -->
+  <col style="width:110px"><!-- Total -->
+  <col style="width:105px"><!-- Deposited -->
+  <col style="width:105px"><!-- Balance -->
+  <col style="width:75px"> <!-- Payment -->
+  <col style="width:65px"> <!-- Source -->
+  <col style="width:95px"> <!-- Status -->
+  <col style="min-width:150px;width:auto"> <!-- Remarks -->
+  <col style="width:70px"> <!-- Invoice -->
 </colgroup>
 <thead><tr><th>Date</th><th>Order ID</th><th>Client</th><th>Phone</th><th>Frame</th><th>Total (RM)</th><th>Deposited</th><th>Balance</th><th>Payment</th><th>Source</th><th>Status</th><th>Remarks</th><th>Invoice</th></tr></thead><tbody id="o-tbody"></tbody></table></div>
   </div>
